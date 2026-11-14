@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kleio-games</title>
+<style>
+  /* Huisstijl "Bronnen in de klas" — gelijk aan Tijdlijnspel en Tijdspeurder */
+  :root {
+    --groen: #2E7160; --groen-donker: #235748; --groen-licht: #e7f0ed;
+    --rood: #C20E1A; --papier: #f3f6f5; --kaart: #ffffff; --inkt: #1d2a26;
+    --zacht: #5a6a65; --lijn: #d3dfdb; --radius: 10px;
+    --kop: "Lexicon No2", "Lexicon No2 Roman", "Lexicon", Georgia, "Times New Roman", serif;
+    --tekst: "TheSans", "TheSans Plain", "TheSansOffice", "Segoe UI", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: var(--tekst); background: var(--papier); color: var(--inkt); }
+  header { display: flex; align-items: center; gap: 16px; padding: 12px 20px; background: var(--kaart); border-bottom: 4px solid var(--groen); flex-wrap: wrap; }
+  .logo { margin-right: auto; display: flex; align-items: center; gap: 16px; text-decoration: none; }
+  .logo-beeld { display: inline-flex; flex-direction: column; align-items: center; line-height: 1; }
+  .logo-bronnen { font-family: var(--kop); color: var(--groen); font-size: 30px; letter-spacing: 1px; }
+  .logo-o { position: relative; display: inline-block; }
+  .logo-o::after { content: ""; position: absolute; left: 50%; top: 52%; width: .16em; height: .16em; border-radius: 50%; background: var(--rood); transform: translate(-50%, -50%); }
+  .logo-klas { font-weight: 700; color: var(--rood); font-size: 15px; letter-spacing: .5px; margin-top: 2px; }
+  .logo-app { font-family: var(--kop); color: var(--inkt); font-size: 20px; padding-left: 16px; border-left: 1px solid var(--lijn); }
+  .versie { font-size: 13px; color: var(--zacht); }
+  main { max-width: 1100px; margin: 0 auto; padding: 24px 16px 60px; }
+  h2, h3 { font-family: var(--kop); color: var(--groen); margin-top: 0; font-weight: normal; }
+  .zacht { color: var(--zacht); font-size: 14px; }
+  .raster { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; align-items: start; }
+  @media (max-width: 800px) { .raster { grid-template-columns: 1fr; } }
+  .spellen { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+  .spel { display: flex; flex-direction: column; background: var(--kaart); border: 1px solid var(--lijn); border-radius: var(--radius); padding: 18px; text-decoration: none; color: inherit; border-top: 4px solid var(--groen); transition: transform .1s, box-shadow .1s; }
+  .spel:hover, .spel:focus-visible { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,.08); }
+  .spel h3 { margin-bottom: 4px; font-size: 22px; }
+  .spel .label { align-self: flex-start; font-size: 12px; font-weight: 700; color: var(--rood); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
+  .spel p { margin: 0 0 14px; flex: 1; line-height: 1.45; }
+  .spel .speel { align-self: flex-start; background: var(--groen); color: #fff; padding: 7px 14px; border-radius: 8px; font-weight: 600; }
+  .blok { background: var(--kaart); border: 1px solid var(--lijn); border-radius: var(--radius); padding: 18px; }
+  .nieuw h2 { font-size: 20px; margin-bottom: 4px; }
+  .nieuw ul { padding-left: 20px; margin: 10px 0 0; line-height: 1.5; }
+  details { margin-top: 14px; font-size: 14px; }
+  details summary { cursor: pointer; color: var(--groen); }
+  footer { text-align: center; color: var(--zacht); font-size: 13px; padding: 0 16px 30px; }
+  footer a { color: var(--groen); }
+</style>
+</head>
+<body>
+<header>
+  <h1 style="margin:0;margin-right:auto;font-size:inherit">
+    <a class="logo" href="https://www.vgnkleio.nl/bronnen/" target="_blank" rel="noopener" title="Bronnen in de klas — VGN Kleio">
+      <span class="logo-beeld" aria-label="Bronnen in de klas">
+        <span class="logo-bronnen">BR<span class="logo-o">O</span>NNEN</span>
+        <span class="logo-klas">IN DE KLAS</span>
+      </span>
+      <span class="logo-app">Kleio-games</span>
+    </a>
+  </h1>
+  <span class="versie" id="versie"></span>
+</header>
+
+<main>
+  <div class="raster">
+    <section>
+      <h2>Kies een spel</h2>
+      <p class="zacht" id="aantal">Bronnen laden…</p>
+      <div class="spellen" id="spellen"></div>
+    </section>
+    <aside class="blok nieuw" id="nieuw" hidden>
+      <h2>Nieuw in deze versie</h2>
+      <div class="zacht" id="nieuw-kop"></div>
+      <ul id="nieuw-lijst"></ul>
+      <details id="eerder" hidden>
+        <summary>Eerdere versies</summary>
+        <div id="eerder-lijst"></div>
+      </details>
+    </aside>
+  </div>
+</main>
+
+<footer>
+  Een project van <a href="https://www.vgnkleio.nl/bronnen/" target="_blank" rel="noopener">Bronnen in de klas — VGN Kleio</a>.
+  Docenten: <a href="tijdspeurder/#beheer">bronnen beheren</a>.
+</footer>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const datum = d => d ? new Date(d).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+
+async function start() {
+  // config.json: versie, "nieuw in deze versie" en de lijst met spellen.
+  // Een nieuw spel toevoegen = map met index.html maken en een regel in "spellen" zetten.
+  try {
+    const c = await (await fetch('config.json', { cache: 'no-cache' })).json();
+    $('#versie').textContent = 'Versie ' + c.versie;
+    document.title = 'Kleio-games ' + c.versie;
+    $('#spellen').innerHTML = c.spellen.map(s => `
+      <a class="spel" href="${esc(s.map)}/">
+        <span class="label">${esc(s.vaardigheid)}</span>
+        <h3>${esc(s.naam)}</h3>
+        <p>${esc(s.uitleg)}</p>
+        <span class="speel">Spelen</span>
+      </a>`).join('');
+    if (c.nieuw?.length) {
+      $('#nieuw').hidden = false;
+      $('#nieuw-kop').textContent = `Versie ${c.versie} · ${datum(c.datum)}`;
+      $('#nieuw-lijst').innerHTML = c.nieuw.map(n => `<li>${esc(n)}</li>`).join('');
+    }
+    if (c.eerder?.length) {
+      $('#eerder').hidden = false;
+      $('#eerder-lijst').innerHTML = c.eerder.map(v => `
+        <p><b>Versie ${esc(v.versie)}</b> <span class="zacht">${esc(datum(v.datum))}</span></p>
+        <ul>${(v.nieuw || []).map(n => `<li>${esc(n)}</li>`).join('')}</ul>`).join('');
+    }
+  } catch (e) {
+    $('#spellen').innerHTML = '<p>De spellen konden niet geladen worden. Open Kleio-games via de website (niet als los bestand).</p>';
+  }
+  try {
+    const d = await (await fetch('collectie.json', { cache: 'no-cache' })).json();
+    const n = (Array.isArray(d) ? d : d.bronnen || []).length;
+    $('#aantal').textContent = `Alle spellen gebruiken dezelfde collectie van ${n} bronnen uit VGN Kleio.`;
+  } catch (e) { $('#aantal').textContent = ''; }
+}
+start();
+</script>
+</body>
+</html>

@@ -1,0 +1,41 @@
+{
+  "versie": "1.1.0",
+  "datum": "2026-11-14",
+  "nieuw": [
+    "Nieuw spel: Vreemde eend. Welke bron hoort er niet bij, en waarom? Je controleert je antwoord zelf en krijgt hulpvragen als je vastloopt.",
+    "In elk spel kun je met de knop ⚑ Meld laten weten dat er iets niet klopt aan een bron.",
+    "Docenten kunnen de bronnencollectie nu direct vanuit het beheerscherm publiceren voor alle spellen.",
+    "Opgelost: het beheerscherm meldde ten onrechte dat opslaan niet lukte."
+  ],
+  "eerder": [
+    {
+      "versie": "1.0.0",
+      "datum": "2026-11-14",
+      "nieuw": [
+        "Tijdlijnspel en Tijdspeurder staan nu samen in Kleio-games.",
+        "Alle spellen gebruiken dezelfde bronnencollectie uit VGN Kleio.",
+        "Vanuit elk spel ga je met ‘Alle spellen’ terug naar dit startscherm."
+      ]
+    }
+  ],
+  "spellen": [
+    {
+      "map": "tijdlijnspel",
+      "naam": "Tijdlijnspel",
+      "vaardigheid": "Chronologie",
+      "uitleg": "Dateer elke bron en leg hem op de juiste plek op je tijdlijn. Wie het eerst een volle tijdlijn heeft, wint."
+    },
+    {
+      "map": "tijdspeurder",
+      "naam": "Tijdspeurder",
+      "vaardigheid": "Tijd en ruimte",
+      "uitleg": "Raad uit welk jaar een bron komt en wijs aan waar hij gemaakt is. Hoe dichterbij, hoe meer punten."
+    },
+    {
+      "map": "vreemde-eend",
+      "naam": "Vreemde eend",
+      "vaardigheid": "Contextualiseren",
+      "uitleg": "Drie bronnen komen uit dezelfde tijd, één niet. Vind de vreemde eend, kies het tijdvak en leg uit wat je zag."
+    }
+  ]
+}

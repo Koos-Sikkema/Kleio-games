@@ -1,0 +1,971 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tijdlijnspel</title>
+<style>
+  /* ====== HUISSTIJL "BRONNEN IN DE KLAS" — gelijk aan Tijdspeurder ======
+     Groen #2E7160 en rood #C20E1A; koppen in Lexicon No2, tekst in TheSans.
+     Lexicon en TheSans zijn licentie-lettertypen: ze worden gebruikt als ze op de computer
+     staan, anders valt de pagina terug op Georgia / Segoe UI. */
+  :root {
+    --groen: #2E7160;
+    --groen-donker: #235748;
+    --groen-licht: #e7f0ed;
+    --rood: #C20E1A;
+    --rood-licht: #fbe9ea;
+    --papier: #f3f6f5;
+    --kaart: #ffffff;
+    --inkt: #1d2a26;
+    --zacht: #5a6a65;
+    --lijn: #d3dfdb;
+    --accent: var(--groen);
+    --accent-donker: var(--groen-donker);
+    --goed: var(--groen);
+    --radius: 10px;
+    --kop: "Lexicon No2", "Lexicon No2 Roman", "Lexicon", Georgia, "Times New Roman", serif;
+    --tekst: "TheSans", "TheSans Plain", "TheSansOffice", "Segoe UI", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: var(--tekst); background: var(--papier); color: var(--inkt); }
+  header { display: flex; align-items: center; gap: 16px; padding: 12px 20px; background: var(--kaart); border-bottom: 4px solid var(--groen); flex-wrap: wrap; }
+  .logo { margin-right: auto; display: flex; align-items: center; gap: 16px; text-decoration: none; }
+  .logo-beeld { display: inline-flex; flex-direction: column; align-items: center; line-height: 1; }
+  .logo-bronnen { font-family: var(--kop); color: var(--groen); font-size: 30px; letter-spacing: 1px; }
+  .logo-o { position: relative; display: inline-block; }
+  .logo-o::after { content: ""; position: absolute; left: 50%; top: 52%; width: .16em; height: .16em; border-radius: 50%; background: var(--rood); transform: translate(-50%, -50%); }
+  .logo-klas { font-family: var(--tekst); font-weight: 700; color: var(--rood); font-size: 15px; letter-spacing: .5px; margin-top: 2px; }
+  .logo-app { font-family: var(--kop); color: var(--inkt); font-size: 20px; padding-left: 16px; border-left: 1px solid var(--lijn); }
+  header nav button { background: transparent; color: var(--groen); border: 1px solid transparent; font-weight: 600; }
+  header nav button.actief { border-color: var(--groen); background: var(--groen-licht); }
+  main { max-width: 1300px; margin: 0 auto; padding: 20px 16px 60px; }
+  h2, h3 { font-family: var(--kop); color: var(--groen); margin-top: 0; font-weight: normal; }
+  footer { text-align: center; color: var(--zacht); font-size: 13px; padding: 0 16px 30px; }
+  footer a { color: var(--groen); }
+  button { font: inherit; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--lijn); background: var(--kaart); color: var(--inkt); cursor: pointer; }
+  button:hover { border-color: var(--zacht); }
+  button:disabled { opacity: .5; cursor: default; }
+  button.hoofd { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
+  button.hoofd:hover:not(:disabled) { background: var(--accent-donker); }
+  button.klein { padding: 4px 10px; font-size: 13px; }
+  button.gevaar { color: #a33; }
+  input, select, textarea { font: inherit; padding: 7px 9px; border: 1px solid var(--lijn); border-radius: 8px; background: #fff; color: var(--inkt); width: 100%; }
+  textarea { min-height: 80px; resize: vertical; }
+  label { display: block; font-size: 13px; color: var(--zacht); margin: 10px 0 4px; }
+  .blok { background: var(--kaart); border: 1px solid var(--lijn); border-radius: var(--radius); padding: 18px; }
+  .rij { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .rij > * { flex: 1; }
+  .rij > .vast { flex: 0 0 auto; }
+  .zacht { color: var(--zacht); font-size: 14px; }
+  .melding { color: var(--accent-donker); font-size: 14px; min-height: 1.2em; }
+  [hidden] { display: none !important; }
+
+  /* Start */
+  #view-start .blok { max-width: 620px; margin: 0 auto; }
+  #team-namen { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
+
+  /* Spel */
+  .spel-kop { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+  .stand { display: flex; gap: 8px; flex-wrap: wrap; }
+  .stand-team { font-size: 13px; padding: 4px 10px; border-radius: 14px; background: var(--kaart); border: 1px solid var(--lijn); }
+  .stand-team.aan-zet { border-color: var(--groen); background: var(--groen-licht); font-weight: 700; }
+  .stand-team.uit { opacity: .5; text-decoration: line-through; }
+  .spel-raster { display: grid; grid-template-columns: 1.4fr 1fr; gap: 18px; align-items: start; }
+  @media (max-width: 900px) { .spel-raster { grid-template-columns: 1fr; } }
+  .afb-kader { background: #1d1c1a; border-radius: var(--radius); display: flex; align-items: center; justify-content: center; min-height: 260px; max-height: 58vh; overflow: hidden; cursor: zoom-in; }
+  .afb-kader img { max-width: 100%; max-height: 58vh; object-fit: contain; display: block; }
+  .stap { font-size: 12px; font-weight: 700; letter-spacing: .5px; color: var(--rood); text-transform: uppercase; margin-bottom: 4px; }
+  .jaar-groot { font-family: var(--kop); color: var(--groen); font-size: 40px; text-align: center; margin: 4px 0; }
+  input[type=range] { padding: 0; accent-color: var(--accent); }
+  .uitslag-regel { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--lijn); }
+  .punten { font-weight: 700; color: var(--goed); white-space: nowrap; }
+  .punten.fout { color: var(--rood); }
+  .oordeel { font-family: var(--kop); font-size: 26px; margin: 0 0 6px; }
+  .oordeel.goed { color: var(--groen); }
+  .oordeel.fout { color: var(--rood); }
+  .toelichting { font-size: 15px; line-height: 1.5; margin: 12px 0 6px; background: var(--papier); border-left: 3px solid var(--accent); padding: 8px 12px; border-radius: 4px; }
+  .bron-link { font-size: 13px; color: var(--zacht); }
+  .bron-link a { color: var(--accent-donker); }
+  #zoom { position: fixed; inset: 0; background: rgba(0,0,0,.92); display: flex; align-items: center; justify-content: center; z-index: 2000; cursor: zoom-out; }
+  #zoom img { max-width: 96vw; max-height: 96vh; }
+
+  /* Tijdlijn */
+  .tijdlijn-blok { margin-top: 18px; }
+  .tijdlijn-kop { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .tijdlijn { position: relative; display: flex; align-items: stretch; gap: 0; overflow-x: auto; padding: 14px 4px 18px; scroll-behavior: smooth; }
+  .tijdlijn::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; border-top: 3px solid var(--groen); z-index: 0; }
+  .tl-kaart { position: relative; z-index: 1; flex: 0 0 132px; background: var(--kaart); border: 1px solid var(--lijn); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; }
+  .tl-kaart img { width: 100%; height: 76px; object-fit: cover; background: #ddd; display: block; }
+  .tl-jaar { font-family: var(--kop); color: var(--groen); font-size: 22px; text-align: center; padding: 4px 4px 0; }
+  .tl-titel { font-size: 11px; color: var(--zacht); text-align: center; padding: 0 6px 6px; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .tl-kaart.nieuw { border: 2px solid var(--groen); box-shadow: 0 0 0 4px var(--groen-licht); animation: plop .5s ease; }
+  .tl-kaart.mis { border: 2px dashed var(--rood); box-shadow: 0 0 0 4px var(--rood-licht); }
+  .tl-kaart.mis .tl-jaar { color: var(--rood); }
+  .tl-kaart.vraag { border: 2px solid var(--rood); }
+  .tl-kaart.vraag .tl-jaar { color: var(--rood); }
+  @keyframes plop { from { transform: scale(.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .tl-slot { position: relative; z-index: 1; flex: 0 0 34px; margin: 0 6px; align-self: center; height: 70px; border: 2px dashed var(--lijn); border-radius: 8px; background: var(--papier); color: var(--zacht); font-size: 20px; padding: 0; }
+  .tl-slot:hover { border-color: var(--groen); color: var(--groen); }
+  .tl-tussen { flex: 0 0 14px; }
+  .tl-leeg { color: var(--zacht); font-size: 14px; padding: 10px; background: var(--papier); position: relative; z-index: 1; }
+
+  /* Einde */
+  .eind-team { margin-top: 16px; }
+  .eind-team h3 { margin-bottom: 0; }
+
+  /* Beheer */
+  .beheer-raster { display: grid; grid-template-columns: 1fr 1.2fr; gap: 18px; align-items: start; }
+  @media (max-width: 900px) { .beheer-raster { grid-template-columns: 1fr; } }
+  .lijst { max-height: 70vh; overflow: auto; margin-top: 10px; }
+  .lijst-item { display: flex; gap: 10px; align-items: center; padding: 8px; border-bottom: 1px solid var(--lijn); }
+  .lijst-item img { width: 64px; height: 48px; object-fit: cover; border-radius: 6px; background: #ddd; flex: 0 0 auto; }
+  .lijst-item .tekst { flex: 1; min-width: 0; }
+  .lijst-item .tekst b { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .waarschuwing { color: #a33; font-size: 12px; }
+  #f-voorbeeld { max-width: 100%; max-height: 220px; border-radius: 8px; margin-top: 8px; display: block; }
+  .tabs { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+  .tabs button.actief { background: var(--inkt); color: var(--papier); border-color: var(--inkt); }
+  .terug { color: var(--groen); font-weight: 600; text-decoration: none; padding: 6px 10px; border:1px solid var(--lijn); border-radius: 8px; }
+  .terug:hover { background: var(--groen-licht); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1 style="margin:0;margin-right:auto;font-size:inherit">
+    <a class="logo" href="https://www.vgnkleio.nl/bronnen/" target="_blank" rel="noopener" title="Bronnen in de klas — VGN Kleio">
+      <span class="logo-beeld" aria-label="Bronnen in de klas">
+        <span class="logo-bronnen">BR<span class="logo-o">O</span>NNEN</span>
+        <span class="logo-klas">IN DE KLAS</span>
+      </span>
+      <span class="logo-app">Tijdlijnspel</span>
+    </a>
+  </h1>
+  <nav>
+    <a class="terug" href="../" title="Terug naar alle Kleio-games">← Alle spellen</a>
+    <button data-naar="start" class="actief">Spelen</button>
+    <button data-naar="beheer">Bronnen beheren</button>
+  </nav>
+</header>
+
+<main>
+  <!-- ================= START ================= -->
+  <section id="view-start" class="view">
+    <div class="blok">
+      <h2>Bouw je tijdlijn</h2>
+      <p>Je krijgt steeds een nieuwe historische bron. <b>Eerst dateer je hem:</b> uit welk jaar komt hij? <b>Daarna plaats je hem</b> op je tijdlijn, tussen de bronnen die je al hebt. Staat hij op de goede plek, dan mag hij blijven. Wie het eerst de tijdlijn vol heeft, wint.</p>
+      <label for="kies-tijdvak">Tijdvak</label>
+      <select id="kies-tijdvak"></select>
+      <div class="rij">
+        <div>
+          <label for="kies-teams">Aantal spelers of teams</label>
+          <input id="kies-teams" type="number" min="1" max="8" value="1">
+        </div>
+        <div>
+          <label for="kies-doel">Kaarten op de tijdlijn om te winnen</label>
+          <input id="kies-doel" type="number" min="2" max="40" value="10">
+        </div>
+        <div>
+          <label for="kies-fouten">Max. fouten (0 = onbeperkt)</label>
+          <input id="kies-fouten" type="number" min="0" max="20" value="3">
+        </div>
+      </div>
+      <label>Namen</label>
+      <div id="team-namen"></div>
+      <label><input id="kies-gecontroleerd" type="checkbox" style="width:auto"> Alleen gecontroleerde bronnen</label>
+      <p class="zacht" id="start-telling"></p>
+      <button class="hoofd" id="knop-start">Start spel</button>
+    </div>
+  </section>
+
+  <!-- ================= SPEL ================= -->
+  <section id="view-spel" class="view" hidden>
+    <div class="spel-kop">
+      <h2 id="beurt-titel" style="margin:0">Beurt</h2>
+      <div class="stand" id="stand"></div>
+    </div>
+    <div class="spel-raster">
+      <div class="afb-kader" id="afb-kader"><img id="spel-img" alt="Historische bron"></div>
+      <div class="blok">
+        <!-- Stap 1: dateren -->
+        <div id="paneel-dateren">
+          <div class="stap">Stap 1 van 2</div>
+          <h3>Uit welk jaar komt deze bron?</h3>
+          <div class="jaar-groot" id="jaar-tekst">1900</div>
+          <input type="range" id="jaar-schuif" aria-label="Jaartal">
+          <div class="rij" style="margin-top:8px">
+            <button class="vast klein" data-stap="-10">−10</button>
+            <button class="vast klein" data-stap="-1">−1</button>
+            <input id="jaar-invoer" type="number" title="Typ een jaartal (negatief = v.Chr.)" aria-label="Jaartal typen">
+            <button class="vast klein" data-stap="1">+1</button>
+            <button class="vast klein" data-stap="10">+10</button>
+          </div>
+          <button class="hoofd" id="knop-gedateerd" style="width:100%;margin-top:14px">Vastleggen en verder naar de tijdlijn</button>
+        </div>
+        <!-- Stap 2: plaatsen -->
+        <div id="paneel-plaatsen" hidden>
+          <div class="stap">Stap 2 van 2</div>
+          <h3>Waar hoort hij op je tijdlijn?</h3>
+          <p>Jouw datering: <b id="p-gok"></b></p>
+          <p class="zacht">Klik hieronder op de <b>+</b> tussen de bronnen waar deze bron hoort. Je mag afwijken van je eigen datering.</p>
+          <p class="melding" id="p-melding"></p>
+          <div class="rij">
+            <button class="vast" id="knop-terug">← Datering aanpassen</button>
+            <button class="hoofd" id="knop-plaats" disabled>Plaatsen!</button>
+          </div>
+        </div>
+        <!-- Uitslag -->
+        <div id="paneel-uitslag" hidden>
+          <p class="oordeel" id="u-oordeel"></p>
+          <h3 id="u-titel" style="margin-bottom:6px"></h3>
+          <div class="uitslag-regel"><span id="u-plaats"></span><span class="punten" id="u-plaats-punten"></span></div>
+          <div class="uitslag-regel"><span id="u-jaar"></span><span class="punten" id="u-jaar-punten"></span></div>
+          <div class="toelichting" id="u-toelichting"></div>
+          <div class="bron-link" id="u-bron"></div>
+          <button class="hoofd" id="knop-volgende" style="width:100%;margin-top:14px">Volgende beurt</button>
+        </div>
+      </div>
+    </div>
+    <div class="blok tijdlijn-blok">
+      <div class="tijdlijn-kop">
+        <h3 id="tl-titel" style="margin:0">Tijdlijn</h3>
+        <span class="zacht" id="tl-telling"></span>
+      </div>
+      <div class="tijdlijn" id="tijdlijn"></div>
+    </div>
+  </section>
+
+  <!-- ================= EINDE ================= -->
+  <section id="view-einde" class="view" hidden>
+    <div class="blok">
+      <h2 id="eind-titel"></h2>
+      <p id="eind-tekst"></p>
+      <div id="eind-tijdlijnen"></div>
+      <div class="rij" style="margin-top:16px">
+        <button class="hoofd vast" id="knop-opnieuw">Nog een keer</button>
+        <button class="vast" data-naar="start">Andere instellingen</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= BEHEER ================= -->
+  <section id="view-beheer" class="view" hidden>
+    <div class="beheer-raster">
+      <div class="blok">
+        <h2>Collectie (<span id="aantal">0</span>)</h2>
+        <div class="rij">
+          <input id="lijst-filter" placeholder="Zoek in collectie…">
+          <button class="vast hoofd" id="knop-nieuw">+ Nieuwe bron</button>
+        </div>
+        <label><input type="checkbox" id="lijst-controleren" style="width:auto"> Alleen bronnen die ik nog moet controleren (<span id="aantal-controleren">0</span>)</label>
+        <div class="lijst" id="lijst"></div>
+        <div class="rij" style="margin-top:12px">
+          <button class="vast klein" id="knop-export">Exporteren (.json)</button>
+          <button class="vast klein" id="knop-import">Importeren</button>
+          <input type="file" id="import-bestand" accept=".json,application/json" hidden>
+          <button class="vast klein" id="knop-voorbeelden">Voorbeelden toevoegen</button>
+          <button class="vast klein gevaar" id="knop-wis">Alles wissen</button>
+        </div>
+        <p class="zacht">De collectie wordt in deze browser bewaard. Exporteer hem om hem te delen met collega's of leerlingen. Je kunt ook een export uit <b>Tijdspeurder</b> importeren: de uitleg wordt dan ingekort tot een korte toelichting.</p>
+      </div>
+
+      <div class="blok">
+        <div class="tabs">
+          <button class="actief" data-tab="formulier">Bron bewerken</button>
+          <button data-tab="kleio">VGN Kleio importeren</button>
+        </div>
+
+        <!-- Kleio -->
+        <div id="tab-kleio" hidden>
+          <p style="margin-top:0">Haal alle beeldbronnen uit de <a href="https://www.vgnkleio.nl/bronnen/" target="_blank" rel="noopener">bronnenbank van VGN Kleio</a> in één keer binnen.</p>
+          <p class="zacht">Kleio geeft per bron een tijdvak, maar geen exact jaartal. Het Tijdlijnspel zoekt het jaartal in de titel en de tekst, en maakt van de context een korte toelichting. Daarom krijgen alle geïmporteerde bronnen de markering <b>controleren</b>. Na het controleren en opslaan verdwijnt die. Opnieuw importeren werkt alleen nieuwe en nog niet gecontroleerde bronnen bij.</p>
+          <label>Welke soorten bronnen?</label>
+          <div id="k-types"></div>
+          <label><input type="checkbox" id="k-zonder-jaar" style="width:auto"> Ook bronnen importeren waarin geen jaartal is gevonden (vul je later zelf in; zonder jaartal doen ze niet mee)</label>
+          <p class="melding" id="k-melding"></p>
+          <button class="hoofd" id="knop-kleio">Importeer uit VGN Kleio</button>
+        </div>
+
+        <!-- Formulier -->
+        <div id="tab-formulier">
+          <input type="hidden" id="f-id">
+          <label for="f-titel">Titel (pas zichtbaar na het plaatsen)</label>
+          <input id="f-titel">
+          <label for="f-afb">Afbeelding: link (URL)…</label>
+          <div class="rij">
+            <input id="f-afb" placeholder="https://…">
+            <button class="vast" id="knop-upload">…of uploaden</button>
+            <input type="file" id="f-upload" accept="image/*" hidden>
+          </div>
+          <img id="f-voorbeeld" hidden alt="">
+          <label for="f-jaar">Jaar (negatief = v.Chr.)</label>
+          <input id="f-jaar" type="number">
+          <label for="f-toelichting">Korte toelichting (pas zichtbaar na het plaatsen) — <span id="f-teller">0</span>/<span id="f-max"></span> tekens</label>
+          <textarea id="f-toelichting" placeholder="Eén of twee zinnen: wat zie je en waarom is het belangrijk?"></textarea>
+          <div class="rij">
+            <div><label for="f-maker">Maker / collectie</label><input id="f-maker"></div>
+            <div><label for="f-licentie">Licentie</label><input id="f-licentie" placeholder="bijv. Publiek domein"></div>
+          </div>
+          <label for="f-bron-url">Link naar de bron</label>
+          <input id="f-bron-url" placeholder="https://…">
+          <p class="melding" id="f-melding"></p>
+          <div class="rij">
+            <button class="hoofd vast" id="knop-opslaan">Opslaan</button>
+            <button class="vast" id="knop-leeg">Leegmaken</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>Het Tijdlijnspel is onderdeel van <a href="https://www.vgnkleio.nl/bronnen/" target="_blank" rel="noopener">Bronnen in de klas</a> (VGN Kleio)</footer>
+
+<div id="zoom" hidden><img alt=""></div>
+
+<script src="../gedeeld/melden.js"></script>
+<script>
+/* =====================================================================
+   INSTELLINGEN — hier kun je het spel naar je hand zetten
+   ===================================================================== */
+const CONFIG = {
+  plaatsPunten: 100,         // punten voor een goed geplaatste bron
+  maxJaarPunten: 100,        // max. bonuspunten voor de datering
+  // Hoe streng de datering telt: hoe verder terug in de tijd, hoe meer speling.
+  // Speling = max(minSpeling, jaren-geleden × spelingFactor). Zoveel jaar ernaast = nog ~37% van de punten.
+  minSpeling: 10, spelingFactor: 0.08,
+  toelichtingMax: 280,       // max. lengte van de korte toelichting (tekens)
+  kleioApi: 'https://www.vgnkleio.nl/wp-json/wp/v2',
+};
+
+// Tijdvakken van Kleio → jaarbereik (gebruikt om een jaartal uit de tekst te kiezen)
+const KLEIO_TIJD = {
+  'Prehistorie': [-10000, -3000], 'Oudheid': [-3000, 500], 'Vroege middeleeuwen': [500, 1000],
+  'Late middeleeuwen': [1000, 1500], '16e eeuw': [1500, 1599], '17e eeuw': [1600, 1699],
+  '18e eeuw': [1700, 1799], '19e eeuw': [1800, 1899], '20e eeuw': [1900, 1999], '21e eeuw': [2000, 2030],
+};
+// Brontypes van Kleio die beeld bevatten (id's uit de Kleio-database)
+const KLEIO_BEELDTYPES = [
+  { id: 190, naam: 'Foto' }, { id: 191, naam: 'Tekening of schilderij' }, { id: 189, naam: 'Spotprent, cartoon of poster' },
+  { id: 196, naam: 'Object' }, { id: 193, naam: 'Kaart' }, { id: 407, naam: 'Infographic' }, { id: 188, naam: 'Afbeelding (overig)' },
+];
+
+const TIJDVAKKEN = [
+  { naam: 'Alle tijdvakken', van: null, tot: null },
+  { naam: '1. Jagers en boeren (tot 3000 v.Chr.)', van: -10000, tot: -3000 },
+  { naam: '2. Grieken en Romeinen (3000 v.Chr. – 500)', van: -3000, tot: 500 },
+  { naam: '3. Monniken en ridders (500 – 1000)', van: 500, tot: 1000 },
+  { naam: '4. Steden en staten (1000 – 1500)', van: 1000, tot: 1500 },
+  { naam: '5. Ontdekkers en hervormers (1500 – 1600)', van: 1500, tot: 1600 },
+  { naam: '6. Regenten en vorsten (1600 – 1700)', van: 1600, tot: 1700 },
+  { naam: '7. Pruiken en revoluties (1700 – 1800)', van: 1700, tot: 1800 },
+  { naam: '8. Burgers en stoommachines (1800 – 1900)', van: 1800, tot: 1900 },
+  { naam: '9. Wereldoorlogen (1900 – 1950)', van: 1900, tot: 1950 },
+  { naam: '10. Televisie en computer (1950 – 2000)', van: 1950, tot: 2000 },
+  { naam: 'Na 2000', van: 2000, tot: new Date().getFullYear() + 1 },
+  { naam: 'Tijdvak 1 t/m 4 (tot 1500)', van: -10000, tot: 1500 },
+  { naam: 'Tijdvak 5 t/m 7 (1500 – 1800)', van: 1500, tot: 1800 },
+  { naam: 'Tijdvak 8 t/m 10 (vanaf 1800)', van: 1800, tot: new Date().getFullYear() + 1 },
+];
+
+// Startcollectie (wordt geladen als de collectie leeg is, of via "Voorbeelden toevoegen")
+const VOORBEELDEN = [
+  { titel: 'De eerste gemotoriseerde vlucht van de gebroeders Wright', jaar: 1903,
+    afbeelding: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/First_flight2.jpg/1280px-First_flight2.jpg',
+    toelichting: 'Op 17 december 1903 vloog Orville Wright twaalf seconden met de Wright Flyer. Het begin van de luchtvaart.',
+    maker: 'John T. Daniels / Wikimedia Commons', licentie: 'Publiek domein', bronUrl: 'https://commons.wikimedia.org/wiki/File:First_flight2.jpg' },
+  { titel: 'Sluiting van de Zuiderzee', jaar: 1932,
+    afbeelding: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/af/Sluiting_van_de_Zuiderzee.jpg/1280px-Sluiting_van_de_Zuiderzee.jpg',
+    toelichting: 'Op 28 mei 1932 werd het laatste gat in de Afsluitdijk gedicht. De Zuiderzee werd het IJsselmeer.',
+    maker: 'Wikimedia Commons', licentie: 'Publiek domein', bronUrl: 'https://commons.wikimedia.org/wiki/File:Sluiting_van_de_Zuiderzee.jpg' },
+  { titel: 'Rotterdam na het bombardement', jaar: 1940,
+    afbeelding: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Bombardement_Rotterdam%2C_Bestanddeelnr_120-0455.jpg/1280px-Bombardement_Rotterdam%2C_Bestanddeelnr_120-0455.jpg',
+    toelichting: 'Op 14 mei 1940 bombardeerde de Duitse luchtmacht de binnenstad van Rotterdam. Een dag later capituleerde Nederland.',
+    maker: 'Nationaal Archief / Wikimedia Commons', licentie: 'CC0', bronUrl: 'https://commons.wikimedia.org/wiki/File:Bombardement_Rotterdam,_Bestanddeelnr_120-0455.jpg' },
+  { titel: 'Intocht van de Canadezen in Amsterdam', jaar: 1945,
+    afbeelding: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/Intocht_van_de_Canadezen_aan_de_Amstellaan_%28nu_Vrijheidslaan_genoemd%29%2C_Bestanddeelnr_900-2944.jpg/1280px-Intocht_van_de_Canadezen_aan_de_Amstellaan_%28nu_Vrijheidslaan_genoemd%29%2C_Bestanddeelnr_900-2944.jpg',
+    toelichting: 'In mei 1945 trokken Canadese troepen Amsterdam binnen. De Amstellaan kreeg daarna de naam Vrijheidslaan.',
+    maker: 'Nationaal Archief / Wikimedia Commons', licentie: 'CC0', bronUrl: 'https://commons.wikimedia.org/wiki/File:Intocht_van_de_Canadezen_aan_de_Amstellaan_(nu_Vrijheidslaan_genoemd),_Bestanddeelnr_900-2944.jpg' },
+  { titel: 'Watersnoodramp in Oudenhoorn', jaar: 1953,
+    afbeelding: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cc/NIMH_P101-C41_017_Watersnoodramp_1953_Oudenhoorn.jpg/1280px-NIMH_P101-C41_017_Watersnoodramp_1953_Oudenhoorn.jpg',
+    toelichting: 'In de nacht van 31 januari op 1 februari 1953 braken in Zuidwest-Nederland de dijken door. Ruim 1800 mensen kwamen om.',
+    maker: 'NIMH / Wikimedia Commons', licentie: 'Publiek domein', bronUrl: 'https://commons.wikimedia.org/wiki/File:NIMH_P101-C41_017_Watersnoodramp_1953_Oudenhoorn.jpg' },
+  { titel: 'Elfstedentocht van 1963', jaar: 1963,
+    afbeelding: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Elfstedentocht1963Paping.jpg/1280px-Elfstedentocht1963Paping.jpg',
+    toelichting: 'De "hel van \'63": door de strenge kou haalden maar 69 van de bijna 10.000 deelnemers de finish.',
+    maker: 'Wikimedia Commons', licentie: 'CC0', bronUrl: 'https://commons.wikimedia.org/wiki/File:Elfstedentocht1963Paping.jpg' },
+  { titel: 'Oost- en West-Duitsers bij de Brandenburger Tor', jaar: 1989,
+    afbeelding: 'https://upload.wikimedia.org/wikipedia/commons/1/1c/West_and_East_Germans_at_the_Brandenburg_Gate_in_1989.jpg',
+    toelichting: 'Op 9 november 1989 ging de Berlijnse Muur open. Duizenden mensen vierden feest bij de Brandenburger Tor.',
+    maker: 'Wikimedia Commons', licentie: 'CC BY-SA 3.0', bronUrl: 'https://commons.wikimedia.org/wiki/File:West_and_East_Germans_at_the_Brandenburg_Gate_in_1989.jpg' },
+];
+
+/* =====================================================================
+   HULPFUNCTIES
+   ===================================================================== */
+const OPSLAG = 'tijdlijnspel.bronnen.v1';
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const jaarTekst = j => j < 0 ? `${-j} v.Chr.` : String(j);
+const heeftJaar = b => Number.isFinite(b.jaar);
+const htmlNaarTekst = h => h ? new DOMParser().parseFromString(String(h), 'text/html').body.textContent.replace(/\s+/g, ' ').trim() : '';
+function schud(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function zetAfbeelding(img, b) {
+  img.onerror = b.reserve ? () => { img.onerror = null; img.src = b.reserve; } : null;
+  img.src = b.afbeelding;
+}
+// Maak van een lange tekst een korte toelichting: hele zinnen tot het maximum
+function kortVan(tekst, max = CONFIG.toelichtingMax) {
+  const t = String(tekst || '').replace(/\s+/g, ' ').trim();
+  if (t.length <= max) return t;
+  const zinnen = t.match(/[^.!?]+[.!?]+(\s|$)/g) || [t];
+  let uit = '';
+  for (const z of zinnen) { if ((uit + z).trim().length > max) break; uit += z; }
+  uit = uit.trim();
+  return uit || t.slice(0, max - 1).replace(/\s\S*$/, '') + '…';
+}
+
+/* =====================================================================
+   OPSLAG
+   ===================================================================== */
+let bronnen = [];
+let vasteCollectie = false;
+function laad() {
+  try { const r = localStorage.getItem(OPSLAG); if (r) return JSON.parse(r); } catch (e) {}
+  return null;
+}
+let opslagGewaarschuwd = false;
+function bewaar() {
+  try {
+    if (vasteCollectie) localStorage.setItem(OPSLAG + '.eigen', JSON.stringify(bronnen.filter(b => vasteCollectie.get(b.id) !== JSON.stringify(b))));
+    else localStorage.setItem(OPSLAG, JSON.stringify(bronnen));
+    return true;
+  } catch (e) {
+    if (e.name === 'QuotaExceededError') { alert('Opslaan lukt niet: de browseropslag is vol. Gebruik liever links naar afbeeldingen dan uploads, of exporteer en verwijder bronnen.'); return false; }
+    if (!opslagGewaarschuwd) { opslagGewaarschuwd = true; alert('Deze browser staat opslaan niet toe. Je wijzigingen verdwijnen bij het sluiten: gebruik "Exporteren" om ze te bewaren.'); }
+    return true;
+  }
+}
+// Zet een bron (ook uit Tijdspeurder) om naar het formaat van het Tijdlijnspel
+function normaliseer(b) {
+  return {
+    id: b.id || uid(), titel: b.titel || '', afbeelding: b.afbeelding || '', reserve: b.reserve,
+    jaar: Number.isFinite(+b.jaar) && b.jaar !== null && b.jaar !== '' ? +b.jaar : null,
+    toelichting: b.toelichting || kortVan(b.beschrijving),
+    maker: b.maker || '', licentie: b.licentie || '', bronUrl: b.bronUrl || '',
+    controleren: !!b.controleren,
+  };
+}
+bronnen = laad();
+if (!bronnen) { bronnen = VOORBEELDEN.map(b => normaliseer({ ...b, id: uid() })); bewaar(); }
+
+/* Online versie: staat er een bestand collectie.json naast index.html, dan krijgt iedereen
+   (dus ook leerlingen) automatisch die collectie. Het beheerscherm is dan verborgen;
+   open het met #beheer achter de link. Een export uit Tijdspeurder werkt ook. */
+async function laadVasteCollectie() {
+  try {
+    const r = await fetch('../collectie.json', { cache: 'no-cache' });
+    if (!r.ok) return;
+    const data = await r.json();
+    const vast = (Array.isArray(data) ? data : data.bronnen || []).map((b, i) => normaliseer({ ...b, id: b.id || 'c' + i }));
+    if (!vast.length) return;
+    vasteCollectie = new Map(vast.map(b => [b.id, JSON.stringify(b)]));
+    let eigen = null;
+    try { eigen = JSON.parse(localStorage.getItem(OPSLAG + '.eigen') || 'null'); } catch (e) {}
+    const opId = new Map(vast.map(b => [b.id, b]));
+    (eigen || []).forEach(b => opId.set(b.id, b));
+    bronnen = [...opId.values()];
+    // In Kleio-games wordt de collectie centraal beheerd (via Tijdspeurder), zodat geen velden verloren gaan
+    $$('header nav button[data-naar="beheer"]').forEach(b => b.hidden = true);
+    if (location.hash === '#beheer') location.href = '../tijdspeurder/#beheer';
+    vulStart();
+  } catch (e) { /* geen collectie.json (of lokaal geopend) */ }
+}
+
+/* =====================================================================
+   NAVIGATIE
+   ===================================================================== */
+function toon(naam) {
+  $$('.view').forEach(v => v.hidden = v.id !== 'view-' + naam);
+  $$('header nav button').forEach(b => b.classList.toggle('actief',
+    b.dataset.naar === naam || (b.dataset.naar === 'start' && ['spel', 'einde'].includes(naam))));
+  if (naam === 'start') vulStart();
+  if (naam === 'beheer') toonLijst();
+  window.scrollTo(0, 0);
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-naar]');
+  if (b) toon(b.dataset.naar);
+});
+
+/* =====================================================================
+   START
+   ===================================================================== */
+$('#kies-tijdvak').innerHTML = TIJDVAKKEN.map((t, i) => `<option value="${i}">${esc(t.naam)}</option>`).join('');
+function speelbaar() {
+  const tv = TIJDVAKKEN[+$('#kies-tijdvak').value || 0];
+  const alleenGoed = $('#kies-gecontroleerd').checked;
+  return bronnen.filter(b => heeftJaar(b) && b.afbeelding
+    && (tv.van === null || (b.jaar >= tv.van && b.jaar <= tv.tot))
+    && (!alleenGoed || !b.controleren));
+}
+function vulNamen() {
+  const n = Math.max(1, Math.min(8, +$('#kies-teams').value || 1));
+  // standaardnamen ('Ik', 'Team 2') vervangen; zelf getypte namen blijven staan
+  const oud = $$('#team-namen input').map(i => /^(Ik|Team \d+)$/.test(i.value) ? undefined : i.value);
+  $('#team-namen').innerHTML = Array.from({ length: n }, (_, i) =>
+    `<input value="${esc(oud[i] ?? (n === 1 ? 'Ik' : 'Team ' + (i + 1)))}" aria-label="Naam ${i + 1}">`).join('');
+}
+function vulStart() {
+  if (!$('#team-namen').children.length) vulNamen();
+  const n = speelbaar().length;
+  const teams = Math.max(1, +$('#kies-teams').value || 1);
+  const genoeg = n >= teams + 1;
+  $('#start-telling').textContent = genoeg
+    ? `${n} bronnen met een jaartal beschikbaar in deze selectie.`
+    : `Te weinig bronnen in deze selectie (${n}). Kies een ander tijdvak of voeg bronnen toe.`;
+  $('#knop-start').disabled = !genoeg;
+}
+$('#kies-teams').addEventListener('input', () => { vulNamen(); vulStart(); });
+['#kies-tijdvak', '#kies-gecontroleerd'].forEach(s => $(s).addEventListener('change', vulStart));
+
+/* =====================================================================
+   SPEL
+   ===================================================================== */
+let spel = null;
+let laatsteInstellingen = null;
+
+function startSpel() {
+  const stapel = schud(speelbaar().slice());
+  const namen = $$('#team-namen input').map((i, n) => i.value.trim() || 'Team ' + (n + 1));
+  const jaren = stapel.map(b => b.jaar);
+  spel = {
+    teams: namen.map(naam => ({ naam, kaarten: [stapel.pop()], punten: 0, fouten: 0, uit: false })),
+    stapel,
+    doel: Math.max(2, +$('#kies-doel').value || 10),
+    maxFouten: Math.max(0, +$('#kies-fouten').value || 0),
+    beurt: 0, huidig: null, gok: null, slot: null, fase: 'dateren',
+    min: Math.floor(Math.min(...jaren) / 10) * 10 - 10,
+    max: Math.min(new Date().getFullYear(), Math.ceil(Math.max(...jaren) / 10) * 10 + 10),
+  };
+  laatsteInstellingen = true;
+  const s = $('#jaar-schuif');
+  s.min = spel.min; s.max = spel.max; s.step = 1;
+  $('#jaar-invoer').min = spel.min; $('#jaar-invoer').max = spel.max;
+  toon('spel');
+  nieuweBeurt(true);
+}
+$('#knop-start').addEventListener('click', startSpel);
+$('#knop-opnieuw').addEventListener('click', () => { toon('start'); startSpel(); });
+
+const team = () => spel.teams[spel.beurt];
+
+function nieuweBeurt(eerste) {
+  if (!eerste) {
+    // volgende team dat nog meedoet
+    for (let i = 1; i <= spel.teams.length; i++) {
+      const k = (spel.beurt + i) % spel.teams.length;
+      if (!spel.teams[k].uit) { spel.beurt = k; break; }
+    }
+  }
+  if (!spel.stapel.length) return einde('De stapel bronnen is op.');
+  spel.huidig = spel.stapel.pop();
+  spel.fase = 'dateren'; spel.slot = null;
+  const midden = Math.round((spel.min + spel.max) / 2);
+  zetJaar(midden);
+  zetAfbeelding($('#spel-img'), spel.huidig);
+  $('#beurt-titel').textContent = spel.teams.length > 1 ? `${team().naam} is aan de beurt` : `Bron ${team().kaarten.length + team().fouten}`;
+  toonPaneel('dateren');
+  toonStand();
+  toonTijdlijn();
+}
+
+function toonPaneel(naam) {
+  ['dateren', 'plaatsen', 'uitslag'].forEach(p => $('#paneel-' + p).hidden = p !== naam);
+}
+function toonStand() {
+  $('#stand').innerHTML = spel.teams.map((t, i) => {
+    const fouten = spel.maxFouten ? ` · ${'♥'.repeat(Math.max(0, spel.maxFouten - t.fouten))}${'♡'.repeat(Math.min(spel.maxFouten, t.fouten))}` : '';
+    return `<span class="stand-team ${i === spel.beurt ? 'aan-zet' : ''} ${t.uit ? 'uit' : ''}">${esc(t.naam)}: ${t.kaarten.length}/${spel.doel} · ${t.punten} pt${fouten}</span>`;
+  }).join('') + `<span class="stand-team">Stapel: ${spel.stapel.length}</span>`;
+}
+
+/* ---- Stap 1: dateren ---- */
+function zetJaar(j) {
+  j = Math.max(spel.min, Math.min(spel.max, Math.round(j)));
+  spel.gok = j;
+  $('#jaar-schuif').value = j;
+  $('#jaar-invoer').value = j;
+  $('#jaar-tekst').textContent = jaarTekst(j);
+}
+$('#jaar-schuif').addEventListener('input', e => zetJaar(+e.target.value));
+$('#jaar-invoer').addEventListener('change', e => { if (e.target.value !== '') zetJaar(+e.target.value); });
+$$('[data-stap]').forEach(b => b.addEventListener('click', () => zetJaar(spel.gok + +b.dataset.stap)));
+
+$('#knop-gedateerd').addEventListener('click', () => {
+  if ($('#jaar-invoer').value !== '') zetJaar(+$('#jaar-invoer').value);
+  spel.fase = 'plaatsen';
+  // stel de plek voor die past bij de eigen datering; de speler mag die nog veranderen
+  const k = team().kaarten;
+  spel.slot = k.filter(c => c.jaar <= spel.gok).length;
+  $('#p-gok').textContent = jaarTekst(spel.gok);
+  $('#knop-plaats').disabled = false;
+  $('#p-melding').textContent = '';
+  toonPaneel('plaatsen');
+  toonTijdlijn();
+  $('#tijdlijn').scrollIntoView({ behavior: 'smooth', block: 'center' });
+});
+$('#knop-terug').addEventListener('click', () => { spel.fase = 'dateren'; spel.slot = null; toonPaneel('dateren'); toonTijdlijn(); });
+
+/* ---- Tijdlijn tekenen ---- */
+function kaartHtml(b, extra = '', jaarLabel) {
+  return `<div class="tl-kaart ${extra}">
+    <img src="${esc(b.afbeelding)}" alt="" loading="lazy">
+    <div class="tl-jaar">${esc(jaarLabel ?? jaarTekst(b.jaar))}</div>
+    <div class="tl-titel">${esc(b.titel)}</div>
+  </div>`;
+}
+// opties: { slots: true } = plaatsknoppen tonen; { vraagOp: i } = de nieuwe bron (nog onbekend) op plek i;
+// { nieuwOp: i, goed } = na de uitslag: bron op plek i, goed of fout
+function tijdlijnHtml(kaarten, opt = {}) {
+  const delen = [];
+  const slot = i => {
+    if (opt.vraagOp === i) delen.push(kaartHtml({ afbeelding: spel.huidig.afbeelding, titel: 'jouw plek' }, 'vraag', '? (' + jaarTekst(spel.gok) + ')'));
+    else if (opt.nieuwOp === i) delen.push(kaartHtml(opt.bron, opt.goed ? 'nieuw' : 'mis'));
+    else if (opt.slots) delen.push(`<button class="tl-slot" data-slot="${i}" title="Hier plaatsen" aria-label="Hier plaatsen">+</button>`);
+    else delen.push('<span class="tl-tussen"></span>');
+  };
+  kaarten.forEach((c, i) => { slot(i); delen.push(kaartHtml(c)); });
+  slot(kaarten.length);
+  return delen.join('');
+}
+function toonTijdlijn(opt) {
+  const t = team();
+  $('#tl-titel').textContent = spel.teams.length > 1 ? `Tijdlijn van ${t.naam}` : 'Jouw tijdlijn';
+  $('#tl-telling').textContent = `${t.kaarten.length} van ${spel.doel} bronnen`;
+  if (!opt) opt = spel.fase === 'plaatsen' ? { slots: true, vraagOp: spel.slot } : {};
+  $('#tijdlijn').innerHTML = tijdlijnHtml(t.kaarten, opt);
+  const doel = $('#tijdlijn .vraag, #tijdlijn .nieuw, #tijdlijn .mis');
+  if (doel) doel.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+}
+$('#tijdlijn').addEventListener('click', e => {
+  if (spel?.fase !== 'plaatsen') return;
+  const s = e.target.closest('[data-slot]');
+  const v = e.target.closest('.vraag');
+  if (s) { spel.slot = +s.dataset.slot; toonTijdlijn(); }
+  else if (v) $('#p-melding').textContent = 'Hier staat hij nu. Klik op een andere + om hem te verplaatsen.';
+});
+
+/* ---- Plaatsen en uitslag ---- */
+function jaarPunten(gok, echt) {
+  const geleden = Math.max(0, new Date().getFullYear() - echt);
+  const speling = Math.max(CONFIG.minSpeling, geleden * CONFIG.spelingFactor);
+  return Math.round(CONFIG.maxJaarPunten * Math.exp(-Math.abs(gok - echt) / speling));
+}
+$('#knop-plaats').addEventListener('click', () => {
+  if (spel.slot === null) return;
+  const t = team(), b = spel.huidig, k = t.kaarten;
+  const links = k[spel.slot - 1], rechts = k[spel.slot];
+  const goed = (!links || links.jaar <= b.jaar) && (!rechts || b.jaar <= rechts.jaar);
+  const jp = jaarPunten(spel.gok, b.jaar);
+  const verschil = Math.abs(spel.gok - b.jaar);
+  let plek;
+  if (goed) { plek = spel.slot; k.splice(plek, 0, b); t.punten += CONFIG.plaatsPunten; }
+  else { plek = k.filter(c => c.jaar <= b.jaar).length; t.fouten++; }
+  t.punten += jp;
+  if (spel.maxFouten && t.fouten >= spel.maxFouten) t.uit = true;
+  spel.fase = 'uitslag';
+
+  $('#u-oordeel').textContent = goed ? 'Goed geplaatst!' : 'Helaas, verkeerde plek';
+  $('#u-oordeel').className = 'oordeel ' + (goed ? 'goed' : 'fout');
+  $('#u-titel').textContent = `${b.titel} (${jaarTekst(b.jaar)})`;
+  $('#u-plaats').textContent = goed ? 'De bron blijft op je tijdlijn' : (rechtsLinksTekst(k, plek));
+  $('#u-plaats-punten').textContent = goed ? '+' + CONFIG.plaatsPunten : '0';
+  $('#u-plaats-punten').classList.toggle('fout', !goed);
+  $('#u-jaar').textContent = verschil === 0 ? `Datering: ${jaarTekst(spel.gok)} — precies goed!` : `Datering: ${jaarTekst(spel.gok)} — ${verschil} jaar ernaast`;
+  $('#u-jaar-punten').textContent = '+' + jp;
+  $('#u-toelichting').textContent = b.toelichting || 'Geen toelichting.';
+  $('#u-toelichting').hidden = !b.toelichting;
+  $('#u-bron').innerHTML = [b.maker && esc(b.maker), b.licentie && esc(b.licentie),
+    b.bronUrl && `<a href="${esc(b.bronUrl)}" target="_blank" rel="noopener">Bekijk de bron</a>`,
+    window.KleioMelden && KleioMelden.knop(b, 'Tijdlijnspel')].filter(Boolean).join(' · ');
+
+  const klaar = goed && k.length >= spel.doel;
+  const iedereenUit = spel.teams.every(x => x.uit);
+  $('#knop-volgende').textContent = klaar || iedereenUit || !spel.stapel.length ? 'Naar de uitslag' : (spel.teams.length > 1 ? 'Volgende team' : 'Volgende bron');
+  $('#knop-volgende').onclick = () => {
+    if (klaar) einde(`${t.naam} heeft als eerste ${spel.doel} bronnen op de tijdlijn!`);
+    else if (iedereenUit) einde(spel.teams.length > 1 ? 'Alle teams hebben te veel fouten gemaakt.' : 'Je hebt te veel fouten gemaakt.');
+    else nieuweBeurt(false);
+  };
+  toonPaneel('uitslag');
+  toonStand();
+  toonTijdlijn(goed ? { nieuwOp: -1 } : { nieuwOp: plek, goed: false, bron: b });
+  if (goed) {
+    // markeer de nieuwe kaart
+    const kaarten = $$('#tijdlijn .tl-kaart');
+    kaarten[plek]?.classList.add('nieuw');
+    kaarten[plek]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }
+});
+function rechtsLinksTekst(k, plek) {
+  const l = k[plek - 1], r = k[plek];
+  if (l && r) return `Hij hoort tussen ${jaarTekst(l.jaar)} en ${jaarTekst(r.jaar)}`;
+  if (l) return `Hij hoort na ${jaarTekst(l.jaar)}`;
+  if (r) return `Hij hoort vóór ${jaarTekst(r.jaar)}`;
+  return 'Verkeerde plek';
+}
+
+/* ---- Einde ---- */
+function einde(reden) {
+  const rang = spel.teams.slice().sort((a, b) => b.kaarten.length - a.kaarten.length || b.punten - a.punten);
+  const solo = spel.teams.length === 1;
+  $('#eind-titel').textContent = solo ? `${rang[0].kaarten.length} bronnen op je tijdlijn` : `${rang[0].naam} wint!`;
+  $('#eind-tekst').textContent = reden + ' ' + (solo ? `Je haalde ${rang[0].punten} punten.` : rang.map((t, i) => `${i + 1}. ${t.naam}: ${t.kaarten.length} bronnen, ${t.punten} punten`).join(' · '));
+  $('#eind-tijdlijnen').innerHTML = rang.map(t => `<div class="eind-team">
+      <h3>${esc(t.naam)} — ${t.kaarten.length} bronnen, ${t.punten} punten</h3>
+      <div class="tijdlijn">${tijdlijnHtml(t.kaarten)}</div></div>`).join('');
+  toon('einde');
+}
+
+/* ---- Inzoomen op de afbeelding ---- */
+$('#afb-kader').addEventListener('click', () => { $('#zoom img').src = $('#spel-img').src; $('#zoom').hidden = false; });
+$('#zoom').addEventListener('click', () => $('#zoom').hidden = true);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') $('#zoom').hidden = true; });
+
+/* =====================================================================
+   BEHEER
+   ===================================================================== */
+$('#f-max').textContent = CONFIG.toelichtingMax;
+$('#f-toelichting').maxLength = CONFIG.toelichtingMax;
+$('#f-toelichting').addEventListener('input', () => $('#f-teller').textContent = $('#f-toelichting').value.length);
+
+function toonLijst() {
+  const q = $('#lijst-filter').value.toLowerCase();
+  const alleenControle = $('#lijst-controleren').checked;
+  $('#aantal').textContent = bronnen.length;
+  $('#aantal-controleren').textContent = bronnen.filter(b => b.controleren).length;
+  const lijst = bronnen
+    .filter(b => !alleenControle || b.controleren)
+    .filter(b => !q || [b.titel, b.toelichting, b.jaar].join(' ').toLowerCase().includes(q))
+    .sort((a, b) => (a.jaar ?? 99999) - (b.jaar ?? 99999));
+  $('#lijst').innerHTML = lijst.map(b => `<div class="lijst-item">
+      <img src="${esc(b.afbeelding)}" alt="" loading="lazy">
+      <div class="tekst"><b>${esc(b.titel || '(zonder titel)')}</b>
+        <span class="zacht">${heeftJaar(b) ? jaarTekst(b.jaar) : '<span class="waarschuwing">geen jaartal</span>'}</span>
+        ${b.controleren ? ' <span class="waarschuwing">· controleren</span>' : ''}</div>
+      <button class="vast klein" data-bewerk="${esc(b.id)}">Bewerken</button>
+      <button class="vast klein gevaar" data-verwijder="${esc(b.id)}" title="Verwijderen">✕</button>
+    </div>`).join('') || '<p class="zacht">Geen bronnen gevonden.</p>';
+}
+$('#lijst-filter').addEventListener('input', toonLijst);
+$('#lijst-controleren').addEventListener('change', toonLijst);
+$('#lijst').addEventListener('click', e => {
+  const bw = e.target.closest('[data-bewerk]'), vw = e.target.closest('[data-verwijder]');
+  if (bw) { vulFormulier(bronnen.find(b => b.id === bw.dataset.bewerk)); kiesTab('formulier'); }
+  if (vw && confirm('Deze bron verwijderen?')) { bronnen = bronnen.filter(b => b.id !== vw.dataset.verwijder); bewaar(); toonLijst(); }
+});
+
+function kiesTab(naam) {
+  $$('.tabs button').forEach(b => b.classList.toggle('actief', b.dataset.tab === naam));
+  ['formulier', 'kleio'].forEach(t => $('#tab-' + t).hidden = naam !== t);
+}
+$$('.tabs button').forEach(b => b.addEventListener('click', () => kiesTab(b.dataset.tab)));
+
+function vulFormulier(b = {}) {
+  $('#f-id').value = b.id || '';
+  $('#f-titel').value = b.titel || '';
+  $('#f-afb').value = b.afbeelding || '';
+  $('#f-jaar').value = heeftJaar(b) ? b.jaar : '';
+  $('#f-toelichting').value = b.toelichting || '';
+  $('#f-teller').textContent = $('#f-toelichting').value.length;
+  $('#f-maker').value = b.maker || '';
+  $('#f-licentie').value = b.licentie || '';
+  $('#f-bron-url').value = b.bronUrl || '';
+  $('#f-melding').textContent = b.controleren ? 'Let op: controleer het jaartal en de toelichting, en sla daarna op.' : '';
+  voorbeeld();
+}
+function voorbeeld() {
+  const u = $('#f-afb').value.trim();
+  $('#f-voorbeeld').hidden = !u;
+  if (u) $('#f-voorbeeld').src = u;
+}
+$('#f-afb').addEventListener('change', voorbeeld);
+$('#knop-nieuw').addEventListener('click', () => { vulFormulier(); kiesTab('formulier'); $('#f-titel').focus(); });
+$('#knop-leeg').addEventListener('click', () => vulFormulier());
+$('#knop-upload').addEventListener('click', () => $('#f-upload').click());
+$('#f-upload').addEventListener('change', e => {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      const s = Math.min(1, 1200 / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      $('#f-afb').value = c.toDataURL('image/jpeg', 0.82);
+      voorbeeld();
+    };
+    img.src = r.result;
+  };
+  r.readAsDataURL(f);
+  e.target.value = '';
+});
+$('#knop-opslaan').addEventListener('click', () => {
+  const jaar = $('#f-jaar').value === '' ? null : parseInt($('#f-jaar').value, 10);
+  const b = {
+    id: $('#f-id').value || uid(),
+    titel: $('#f-titel').value.trim(), afbeelding: $('#f-afb').value.trim(), jaar,
+    toelichting: $('#f-toelichting').value.trim(),
+    maker: $('#f-maker').value.trim(), licentie: $('#f-licentie').value.trim(), bronUrl: $('#f-bron-url').value.trim(),
+    controleren: false,
+  };
+  if (!b.titel || !b.afbeelding || !Number.isFinite(b.jaar)) { $('#f-melding').textContent = 'Vul minstens een titel, een afbeelding en een jaartal in.'; return; }
+  const i = bronnen.findIndex(x => x.id === b.id);
+  const voor = bronnen.slice();
+  if (i >= 0) bronnen[i] = { ...bronnen[i], ...b }; else bronnen.push(b);
+  if (!bewaar()) { bronnen = voor; return; }
+  vulFormulier(b);
+  $('#f-melding').textContent = 'Opgeslagen.';
+  toonLijst();
+});
+
+$('#knop-export').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify({ app: 'tijdlijnspel', versie: 1, bronnen }, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'tijdlijnspel-collectie.json'; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+});
+$('#knop-import').addEventListener('click', () => $('#import-bestand').click());
+$('#import-bestand').addEventListener('change', async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    const data = JSON.parse(await f.text());
+    const lijst = (Array.isArray(data) ? data : data.bronnen || []).map(normaliseer);
+    const voor = bronnen.slice();
+    let nieuw = 0, bij = 0;
+    lijst.forEach(b => {
+      const i = bronnen.findIndex(x => x.id === b.id);
+      if (i >= 0) { bronnen[i] = b; bij++; } else { bronnen.push(b); nieuw++; }
+    });
+    if (bewaar()) { toonLijst(); alert(`Geïmporteerd: ${nieuw} nieuw, ${bij} bijgewerkt.`); } else bronnen = voor;
+  } catch (err) { alert('Dit bestand kan ik niet lezen: ' + err.message); }
+  e.target.value = '';
+});
+$('#knop-voorbeelden').addEventListener('click', () => {
+  const titels = new Set(bronnen.map(b => b.titel));
+  VOORBEELDEN.filter(v => !titels.has(v.titel)).forEach(v => bronnen.push(normaliseer({ ...v, id: uid() })));
+  bewaar(); toonLijst();
+});
+$('#knop-wis').addEventListener('click', () => {
+  if (!confirm('Alle bronnen uit deze browser wissen? Exporteer eerst als je ze wilt bewaren.')) return;
+  bronnen = []; bewaar(); toonLijst(); vulFormulier();
+});
+
+/* =====================================================================
+   VGN KLEIO
+   ===================================================================== */
+let kleioTermen = null;
+async function laadKleioTermen() {
+  if (kleioTermen) return kleioTermen;
+  kleioTermen = {};
+  for (const tax of ['kleio_tijd', 'type_bronn']) {
+    const lijst = await (await fetch(`${CONFIG.kleioApi}/${tax}?per_page=100&_fields=id,name,parent`)).json();
+    lijst.forEach(t => kleioTermen[t.id] = { naam: htmlNaarTekst(t.name), ouder: t.parent });
+  }
+  return kleioTermen;
+}
+// Zoek een jaartal in de titel en daarna in de tekst, binnen het tijdvak dat Kleio aangeeft
+function kleioJaar(titel, tekst, bereiken) {
+  const past = j => !bereiken.length || bereiken.some(([a, b]) => j >= a - 1 && j <= b + 1);
+  const re = /(?<![\d.,])(\d{2,4})(\s*(?:v\.\s?Chr|voor Christus))?(?![\d.,])(?!\s*(?:km|kilometer|meter|m\b|kg|kilo|%|procent|mensen|soldaten|man\b|doden|inwoners|gulden|euro))/gi;
+  for (const s of [titel, tekst]) for (const m of s.matchAll(re)) {
+    let j = +m[1];
+    if (m[2]) j = -j; else if (j < 100) continue;
+    if (j <= new Date().getFullYear() && past(j)) return j;
+  }
+  return null;
+}
+// Korte toelichting uit een Kleio-bron: liefst de eerste alinea met context
+// (de eerste, cursieve alinea is vaak alleen een beschrijving van wat je ziet)
+function kleioToelichting(doc) {
+  const alineas = [...doc.querySelectorAll('p')]
+    .map(p => ({ tekst: p.textContent.replace(/\s+/g, ' ').trim(), cursief: p.children.length === 1 && /^(EM|I)$/.test(p.children[0].tagName) && p.children[0].textContent.trim() === p.textContent.trim() }))
+    .map(a => ({ ...a, tekst: a.tekst.replace(/^(toelichting|context|uitleg)\b\s*:?\s*/i, '') }))
+    .filter(a => a.tekst.length > 30);
+  // alinea's die eindigen op ':' leiden alleen de afbeelding in; die slaan we liever over
+  const keuze = alineas.find(a => !a.cursief && !/:$/.test(a.tekst)) || alineas.find(a => !a.cursief) || alineas[0];
+  return keuze ? kortVan(keuze.tekst) : '';
+}
+function kleioNaarBron(p, T) {
+  const doc = new DOMParser().parseFromString(p.content?.rendered || '', 'text/html');
+  const img = [...doc.querySelectorAll('img')].map(i => i.getAttribute('data-src') || i.getAttribute('src')).find(s => /^https?:/.test(s || ''));
+  if (!img) return null;
+  const titel = htmlNaarTekst(p.title?.rendered);
+  const tekst = doc.body.textContent.replace(/\s+/g, ' ').trim();
+  const bereiken = (p.kleio_tijd || []).map(id => KLEIO_TIJD[T[id]?.naam]).filter(Boolean);
+  const jaar = kleioJaar(titel, tekst.replace(/\([^)]*\)/g, ' '), bereiken);
+  return {
+    id: 'kleio-' + p.id, titel, afbeelding: img, jaar,
+    toelichting: kleioToelichting(doc),
+    maker: 'VGN Kleio', licentie: '', bronUrl: p.link,
+    controleren: true,
+  };
+}
+
+$('#k-types').innerHTML = KLEIO_BEELDTYPES.map(t =>
+  `<label style="display:inline-block;margin:2px 12px 2px 0;color:var(--inkt)"><input type="checkbox" value="${t.id}" checked style="width:auto"> ${esc(t.naam)}</label>`).join('');
+
+$('#knop-kleio').addEventListener('click', async () => {
+  const types = $$('#k-types input:checked').map(i => i.value);
+  const melding = t => $('#k-melding').textContent = t;
+  if (!types.length) { melding('Kies minstens één soort bron.'); return; }
+  const knop = $('#knop-kleio'); knop.disabled = true;
+  try {
+    melding('Categorieën ophalen…');
+    const T = await laadKleioTermen();
+    const opgehaald = [];
+    let pagina = 1, paginas = 1;
+    do {
+      melding(`Bronnen ophalen… pagina ${pagina} van ${paginas}`);
+      const q = new URLSearchParams({ per_page: '100', page: pagina, type_bronn: types.join(','),
+        _fields: 'id,title,link,content,kleio_tijd,type_bronn' });
+      const r = await fetch(`${CONFIG.kleioApi}/bronnen?${q}`);
+      if (!r.ok) throw new Error('Kleio antwoordde met ' + r.status);
+      paginas = +r.headers.get('X-WP-TotalPages') || 1;
+      opgehaald.push(...await r.json());
+      pagina++;
+    } while (pagina <= paginas);
+
+    const zonderJaar = $('#k-zonder-jaar').checked;
+    const voor = bronnen.slice();
+    let nieuw = 0, bijgewerkt = 0, overgeslagen = 0, gecontroleerd = 0;
+    for (const p of opgehaald) {
+      const b = kleioNaarBron(p, T);
+      if (!b || (!b.jaar && !zonderJaar)) { overgeslagen++; continue; }
+      const i = bronnen.findIndex(x => x.id === b.id);
+      if (i < 0) { bronnen.push(b); nieuw++; }
+      else if (bronnen[i].controleren) { bronnen[i] = b; bijgewerkt++; }
+      else gecontroleerd++;
+    }
+    if (bewaar()) {
+      toonLijst();
+      melding(`Klaar: ${nieuw} nieuw, ${bijgewerkt} bijgewerkt, ${gecontroleerd} al gecontroleerd (ongemoeid gelaten), ${overgeslagen} overgeslagen (geen afbeelding of geen jaartal gevonden).`);
+    } else { bronnen = voor; melding('Niet opgeslagen: te weinig ruimte. Kies minder soorten bronnen.'); }
+  } catch (e) {
+    melding('Importeren mislukt: ' + e.message);
+  }
+  knop.disabled = false;
+});
+
+/* ===================================================================== */
+vulFormulier();
+toon('start');
+laadVasteCollectie();
+</script>
+</body>
+</html>

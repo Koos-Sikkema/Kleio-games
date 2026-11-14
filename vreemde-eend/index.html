@@ -1,0 +1,573 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vreemde eend</title>
+<style>
+  /* ====== HUISSTIJL "BRONNEN IN DE KLAS" — gelijk aan Tijdlijnspel en Tijdspeurder ====== */
+  :root {
+    --groen: #2E7160; --groen-donker: #235748; --groen-licht: #e7f0ed;
+    --rood: #C20E1A; --rood-licht: #fbe9ea;
+    --papier: #f3f6f5; --kaart: #ffffff; --inkt: #1d2a26; --zacht: #5a6a65; --lijn: #d3dfdb;
+    --radius: 10px;
+    --kop: "Lexicon No2", "Lexicon No2 Roman", "Lexicon", Georgia, "Times New Roman", serif;
+    --tekst: "TheSans", "TheSans Plain", "TheSansOffice", "Segoe UI", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: var(--tekst); background: var(--papier); color: var(--inkt); }
+  header { display: flex; align-items: center; gap: 16px; padding: 12px 20px; background: var(--kaart); border-bottom: 4px solid var(--groen); flex-wrap: wrap; }
+  .logo { margin-right: auto; display: flex; align-items: center; gap: 16px; text-decoration: none; }
+  .logo-beeld { display: inline-flex; flex-direction: column; align-items: center; line-height: 1; }
+  .logo-bronnen { font-family: var(--kop); color: var(--groen); font-size: 30px; letter-spacing: 1px; }
+  .logo-o { position: relative; display: inline-block; }
+  .logo-o::after { content: ""; position: absolute; left: 50%; top: 52%; width: .16em; height: .16em; border-radius: 50%; background: var(--rood); transform: translate(-50%, -50%); }
+  .logo-klas { font-weight: 700; color: var(--rood); font-size: 15px; letter-spacing: .5px; margin-top: 2px; }
+  .logo-app { font-family: var(--kop); color: var(--inkt); font-size: 20px; padding-left: 16px; border-left: 1px solid var(--lijn); }
+  .terug { color: var(--groen); font-weight: 600; text-decoration: none; padding: 6px 10px; border: 1px solid var(--lijn); border-radius: 8px; }
+  .terug:hover { background: var(--groen-licht); }
+  main { max-width: 1200px; margin: 0 auto; padding: 20px 16px 60px; }
+  h2, h3 { font-family: var(--kop); color: var(--groen); margin-top: 0; font-weight: normal; }
+  footer { text-align: center; color: var(--zacht); font-size: 13px; padding: 0 16px 30px; }
+  footer a { color: var(--groen); }
+  button { font: inherit; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--lijn); background: var(--kaart); color: var(--inkt); cursor: pointer; }
+  button:hover:not(:disabled) { border-color: var(--zacht); }
+  button:disabled { opacity: .5; cursor: default; }
+  button.hoofd { background: var(--groen); color: #fff; border-color: var(--groen); font-weight: 600; }
+  button.hoofd:hover:not(:disabled) { background: var(--groen-donker); }
+  button.klein { padding: 4px 10px; font-size: 13px; }
+  select, textarea { font: inherit; padding: 7px 9px; border: 1px solid var(--lijn); border-radius: 8px; background: #fff; color: var(--inkt); width: 100%; }
+  textarea { min-height: 90px; resize: vertical; }
+  label { display: block; font-size: 13px; color: var(--zacht); margin: 10px 0 4px; }
+  .blok { background: var(--kaart); border: 1px solid var(--lijn); border-radius: var(--radius); padding: 18px; }
+  .zacht { color: var(--zacht); font-size: 14px; }
+  .rij { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .rij > * { flex: 1; }
+  .rij > .vast { flex: 0 0 auto; }
+  .check { display: flex; gap: 8px; align-items: center; font-size: 14px; color: var(--inkt); margin: 10px 0 0; }
+  .check input { width: auto; margin: 0; }
+
+  /* ---- start ---- */
+  #view-start .blok { max-width: 720px; margin: 0 auto; }
+  .stappen { margin: 6px 0 4px; padding-left: 22px; line-height: 1.55; }
+
+  /* ---- spel ---- */
+  .meta { display: flex; justify-content: space-between; color: var(--zacht); font-size: 14px; margin-bottom: 8px; flex-wrap: wrap; gap: 8px; }
+  .stap { margin: 18px 0 8px; display: flex; gap: 10px; align-items: baseline; }
+  .stap .nr { flex: 0 0 auto; width: 28px; height: 28px; border-radius: 50%; background: var(--groen); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; }
+  .stap h3 { margin: 0; font-size: 20px; }
+  .kaarten { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  @media (max-width: 900px) { .kaarten { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 480px) { .kaarten { grid-template-columns: 1fr; } }
+  .kaart { position: relative; display: flex; flex-direction: column; text-align: left; padding: 0; overflow: hidden; background: var(--kaart); border: 2px solid var(--lijn); border-radius: var(--radius); cursor: pointer; transition: border-color .1s, box-shadow .1s, transform .1s; }
+  .kaart:hover:not([data-klaar]) { border-color: var(--zacht); transform: translateY(-2px); }
+  .kaart.gekozen { border-color: var(--groen); box-shadow: 0 0 0 3px var(--groen-licht); }
+  .kaart.gekozen::after { content: "Hoort er niet bij"; position: absolute; top: 8px; left: 8px; background: var(--groen); color: #fff; font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 6px; }
+  .kaart.fout { border-color: var(--rood); box-shadow: 0 0 0 3px var(--rood-licht); }
+  .kaart.fout::after { background: var(--rood); }
+  .kaart.eend { border-color: var(--rood); }
+  .kaart.groep { border-color: var(--groen); }
+  .kaart[data-klaar] { cursor: default; }
+  .kaart:focus-visible { outline: 3px solid var(--groen); outline-offset: 2px; }
+  .kaart .beeld { height: 190px; background: #e9eeec; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .kaart .beeld img { width: 100%; height: 100%; object-fit: contain; background: #e9eeec; }
+  .kaart .tekst { padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+  .kaart .titel { font-weight: 600; line-height: 1.3; }
+  .kaart .vergroot { position: absolute; top: 8px; right: 8px; background: rgba(255,255,255,.92); border: 1px solid var(--lijn); border-radius: 6px; padding: 2px 8px; font-size: 13px; }
+  .onthul { display: none; font-size: 14px; line-height: 1.45; }
+  .getoond .onthul { display: block; }
+  .onthul .jaar { font-weight: 700; color: var(--inkt); }
+  .label-tv { display: inline-block; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 6px; background: var(--groen-licht); color: var(--groen); }
+  .eend .label-tv { background: var(--rood-licht); color: var(--rood); }
+  .onthul .acties { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 6px; }
+  .onthul a { color: var(--groen); }
+  .tijdvakken { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; max-width: 760px; }
+  @media (max-width: 600px) { .tijdvakken { grid-template-columns: 1fr; } }
+  .tijdvakken button { text-align: left; }
+  .tijdvakken button.gekozen { border-color: var(--groen); background: var(--groen-licht); font-weight: 600; }
+  .tijdvakken button.fout { border-color: var(--rood); background: var(--rood-licht); }
+  .tijdvakken button.goed { border-color: var(--groen); background: var(--groen-licht); }
+  .tijdvakken button:disabled { opacity: 1; color: var(--zacht); }
+  .tijdvakken button.goed:disabled { color: var(--inkt); font-weight: 600; }
+  .tijdvakken button.goed::after { content: " ✓"; color: var(--groen); }
+  .uitleg-vak { max-width: 760px; }
+  .teller { font-size: 13px; color: var(--zacht); text-align: right; }
+  .feedback { margin-top: 18px; padding: 14px 16px; border-radius: var(--radius); border-left: 5px solid; max-width: 760px; }
+  .feedback.goed { background: var(--groen-licht); border-color: var(--groen); }
+  .feedback.fout { background: var(--rood-licht); border-color: var(--rood); }
+  .feedback p { margin: 4px 0; }
+  .feedback .hint { margin-top: 10px; padding: 10px 12px; background: #fff; border-radius: 8px; border: 1px dashed var(--zacht); }
+  .feedback .hint b { color: var(--groen); }
+  .knoppen { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+
+  /* ---- zelfcontrole ---- */
+  .zelf { margin-top: 18px; max-width: 760px; }
+  .zelf blockquote { margin: 8px 0 12px; padding: 10px 14px; background: var(--papier); border-left: 4px solid var(--groen); border-radius: 0 8px 8px 0; white-space: pre-wrap; }
+  .zelf .criterium { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--lijn); cursor: pointer; color: var(--inkt); font-size: 15px; margin: 0; }
+  .zelf .criterium input { width: auto; margin-top: 3px; }
+  .zelf .criterium small { display: block; color: var(--zacht); font-size: 13px; }
+  .niveau { margin-top: 12px; padding: 10px 14px; border-radius: 8px; background: var(--groen-licht); }
+  .niveau b { color: var(--groen); }
+
+  /* ---- einde ---- */
+  .score { font-family: var(--kop); font-size: 44px; color: var(--groen); margin: 4px 0 10px; }
+  .overzicht { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+  .overzicht th, .overzicht td { text-align: left; padding: 8px; border-bottom: 1px solid var(--lijn); vertical-align: top; }
+  .overzicht td.uitleg { color: var(--zacht); font-style: italic; }
+
+  /* ---- vergroting ---- */
+  .groot { position: fixed; inset: 0; background: rgba(20, 30, 27, .85); display: flex; align-items: center; justify-content: center; z-index: 9000; padding: 20px; cursor: zoom-out; }
+  .groot img { max-width: 100%; max-height: 100%; background: #fff; border-radius: 6px; }
+</style>
+</head>
+<body>
+<header>
+  <h1 style="margin:0;margin-right:auto;font-size:inherit">
+    <a class="logo" href="https://www.vgnkleio.nl/bronnen/" target="_blank" rel="noopener" title="Bronnen in de klas — VGN Kleio">
+      <span class="logo-beeld" aria-label="Bronnen in de klas">
+        <span class="logo-bronnen">BR<span class="logo-o">O</span>NNEN</span>
+        <span class="logo-klas">IN DE KLAS</span>
+      </span>
+      <span class="logo-app">Vreemde eend</span>
+    </a>
+  </h1>
+  <nav><a class="terug" href="../" title="Terug naar alle Kleio-games">← Alle spellen</a></nav>
+</header>
+
+<main>
+  <!-- ================= START ================= -->
+  <section id="view-start" class="view">
+    <div class="blok">
+      <h2>Welke bron hoort er niet bij?</h2>
+      <p>Je krijgt vier bronnen. Drie komen uit hetzelfde tijdvak, één is een vreemde eend in de bijt.</p>
+      <ol class="stappen">
+        <li><b>Kies</b> de bron die er niet bij hoort.</li>
+        <li><b>Bepaal</b> bij welk tijdvak de andere drie horen.</li>
+        <li><b>Leg uit</b> wat je in de bronnen zag dat je op dat idee bracht.</li>
+      </ol>
+      <p class="zacht">Daarna controleer je je antwoord. Klopt het niet? Dan krijg je een hulpvraag en mag je het opnieuw proberen. Tot slot vergelijk je je uitleg met de toelichting bij de bronnen.</p>
+
+      <label for="kies-bereik">Tijdvakken</label>
+      <select id="kies-bereik"></select>
+      <div class="rij">
+        <div>
+          <label for="kies-niveau">Niveau</label>
+          <select id="kies-niveau">
+            <option value="1">Makkelijk: de vreemde eend komt uit een heel andere tijd</option>
+            <option value="2" selected>Gemiddeld: twee tijdvakken ertussen</option>
+            <option value="3">Moeilijk: de vreemde eend komt uit het tijdvak ernaast</option>
+          </select>
+        </div>
+        <div class="vast" style="min-width:140px">
+          <label for="kies-rondes">Aantal rondes</label>
+          <select id="kies-rondes"><option>5</option><option selected>8</option><option>12</option></select>
+        </div>
+      </div>
+      <label class="check"><input type="checkbox" id="kies-hints" checked> Hulpvragen tonen bij een fout antwoord</label>
+      <label class="check"><input type="checkbox" id="kies-gecontroleerd"> Alleen gecontroleerde bronnen</label>
+      <p class="zacht" id="start-info">Bronnen laden…</p>
+      <button class="hoofd" id="knop-start" disabled>Start</button>
+    </div>
+  </section>
+
+  <!-- ================= SPEL ================= -->
+  <section id="view-spel" class="view" hidden>
+    <div class="meta"><span id="ronde-info"></span><span id="score-info"></span></div>
+
+    <div class="stap"><span class="nr">1</span><h3>Welke bron hoort er niet bij?</h3></div>
+    <div class="kaarten" id="kaarten"></div>
+
+    <div class="stap"><span class="nr">2</span><h3>Bij welk tijdvak horen de andere drie?</h3></div>
+    <div class="tijdvakken" id="tijdvakken"></div>
+
+    <div class="stap"><span class="nr">3</span><h3>Leg uit: wat zag je in de bronnen?</h3></div>
+    <div class="uitleg-vak">
+      <textarea id="uitleg" placeholder="Bijvoorbeeld: Op de andere drie bronnen zie ik … Dat past bij … , want in die tijd …"></textarea>
+      <div class="teller" id="teller"></div>
+    </div>
+
+    <div id="feedback"></div>
+    <div id="zelf"></div>
+    <div class="knoppen" id="knoppen"></div>
+  </section>
+
+  <!-- ================= EINDE ================= -->
+  <section id="view-einde" class="view" hidden>
+    <div class="blok">
+      <h2>Klaar!</h2>
+      <div class="score" id="eind-score"></div>
+      <p id="eind-tekst"></p>
+      <table class="overzicht" id="eind-overzicht"></table>
+      <div class="knoppen">
+        <button class="hoofd" id="knop-opnieuw">Nog een keer</button>
+        <button id="knop-kopieer">Kopieer mijn uitleg voor de les</button>
+        <span class="zacht" id="kopieer-melding"></span>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>Vreemde eend is onderdeel van <a href="https://www.vgnkleio.nl/bronnen/" target="_blank" rel="noopener">Bronnen in de klas</a> (VGN Kleio). Geïnspireerd op <i>Beyond the Bubble</i> (Digital Inquiry Group).</footer>
+
+<script src="../gedeeld/melden.js"></script>
+<script>
+/* =====================================================================
+   INSTELLINGEN
+   ===================================================================== */
+const MIN_UITLEG = 25;          // minimaal aantal tekens uitleg voordat je kunt controleren
+const TIJDVAKKEN = [            // de tien tijdvakken (canon / kerndoelen)
+  { nr: 1, naam: 'Tijd van jagers en boeren', van: -Infinity, tot: -3000 },
+  { nr: 2, naam: 'Tijd van Grieken en Romeinen', van: -3000, tot: 500 },
+  { nr: 3, naam: 'Tijd van monniken en ridders', van: 500, tot: 1000 },
+  { nr: 4, naam: 'Tijd van steden en staten', van: 1000, tot: 1500 },
+  { nr: 5, naam: 'Tijd van ontdekkers en hervormers', van: 1500, tot: 1600 },
+  { nr: 6, naam: 'Tijd van regenten en vorsten', van: 1600, tot: 1700 },
+  { nr: 7, naam: 'Tijd van pruiken en revoluties', van: 1700, tot: 1800 },
+  { nr: 8, naam: 'Tijd van burgers en stoommachines', van: 1800, tot: 1900 },
+  { nr: 9, naam: 'Tijd van wereldoorlogen', van: 1900, tot: 1950 },
+  { nr: 10, naam: 'Tijd van televisie en computer', van: 1950, tot: Infinity },
+];
+const BEREIKEN = [
+  { naam: 'Alle tijdvakken', tv: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] },
+  { naam: 'Tijdvak 1 t/m 4 (tot 1500)', tv: [1, 2, 3, 4] },
+  { naam: 'Tijdvak 4 t/m 7 (1000 – 1800)', tv: [4, 5, 6, 7] },
+  { naam: 'Tijdvak 7 t/m 10 (vanaf 1700)', tv: [7, 8, 9, 10] },
+];
+
+/* Hulpvragen: altijd een vraag, nooit het antwoord.
+   Eerst algemeen, bij een volgende fout iets gerichter. */
+const HINT_EEND = [
+  'Welke drie bronnen hebben iets met elkaar gemeen? En wat is dat dan precies?',
+  'Wat voor soort bron is het: een foto, een schilderij, een kaart, een voorwerp of een tekst? Kon zo’n bron in elke tijd gemaakt worden?',
+  'Kijk naar materialen, gebouwen, kleding, wapens of vervoer. Bestond dat allemaal al in dezelfde tijd?',
+  'Over welke personen of gebeurtenissen gaan de titels? Wanneer leefden of gebeurden die?',
+];
+const HINT_EEND_GEKOZEN = 'Kijk nog eens naar de bron die jij koos. Wat heeft die toch gemeen met twee of drie van de andere bronnen?';
+const HINT_TIJDVAK = [
+  'Je weet welke bron er niet bij hoort. Wat zie je op de andere drie dat iets zegt over hun tijd?',
+  'Welke uitvindingen, gebeurtenissen of manieren van leven passen bij de andere drie bronnen? In welk tijdvak horen die thuis?',
+];
+const HINT_TIJDVAK_GERICHT = {   // tweede hulpvraag per tijdvak: noemt een kenmerk, maar niet het antwoord
+  1: 'Zie je aanwijzingen dat mensen hun voedsel zochten of net zelf gingen verbouwen, nog zonder schrift?',
+  2: 'Zie je zuilen, tempels, Latijn of Grieks, of soldaten van een groot rijk rond de Middellandse Zee?',
+  3: 'Zie je kloosters, monniken, leenheren of een samenleving bijna zonder steden?',
+  4: 'Zie je ommuurde steden, gilden, kruisvaarders of een vorst die zijn gebied uitbreidt?',
+  5: 'Zie je ontdekkingsreizen, de boekdrukkunst of strijd over het geloof?',
+  6: 'Zie je de VOC, rijke regenten of een koning die alle macht wil?',
+  7: 'Zie je pruiken, plantages, of mensen die strijden voor vrijheid en grondrechten?',
+  8: 'Zie je stoommachines, fabrieken, spoorwegen of mensen die opkomen voor kiesrecht?',
+  9: 'Zie je soldaten, bezetting, propaganda of de gevolgen van een grote crisis?',
+  10: 'Zie je televisie, computers, welvaart of de tegenstelling tussen Oost en West?',
+};
+
+const CRITERIA = [   // zelfcontrole, naar de beoordelingsschalen van Beyond the Bubble
+  ['Ik noemde een concreet detail uit een bron.', 'Iets wat je ziet of leest, zoals kleding, een gebouw, een voorwerp of een woord.'],
+  ['Ik verbond dat detail met een kenmerk van een tijd.', 'Bijvoorbeeld een uitvinding, een gebeurtenis of een manier van leven.'],
+  ['Mijn uitleg klopt met de toelichting bij de bronnen.', 'Lees de toelichtingen hierboven en vergelijk ze met wat jij schreef.'],
+];
+const NIVEAUS = [
+  ['Op weg', 'Je uitleg blijft nog algemeen. Zoek in de bron een detail dat je kunt aanwijzen en vertel wanneer dat bestond of gebeurde.'],
+  ['Op weg', 'Je uitleg blijft nog algemeen. Zoek in de bron een detail dat je kunt aanwijzen en vertel wanneer dat bestond of gebeurde.'],
+  ['Bijna', 'Goed bezig! Probeer de volgende keer alle drie de stappen te zetten: detail, kenmerk van de tijd en controle met de toelichting.'],
+  ['Sterk', 'Zo redeneert een historicus: je laat zien wát je ziet en waarom dat bij een bepaalde tijd hoort.'],
+];
+
+/* =====================================================================
+   HULPFUNCTIES
+   ===================================================================== */
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const schud = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const tijdvakVan = jaar => TIJDVAKKEN.find(t => jaar >= t.van && jaar < t.tot);
+const jaarTekst = j => j < 0 ? `${-j} v.Chr.` : String(j);
+// Jaartallen in titels verbergen tijdens het spelen (anders verklapt de titel het antwoord)
+const verbergJaren = t => String(t || '').replace(/\b(?:ca\.?\s*)?(1\d{3}|20[0-2]\d)(\s*[-–]\s*(1\d{3}|20[0-2]\d))?\b/g, '…');
+function kort(tekst, max = 260) {
+  const t = String(tekst || '').replace(/\s+/g, ' ').trim();
+  if (t.length <= max) return t;
+  const knip = t.slice(0, max); const punt = knip.lastIndexOf('. ');
+  return (punt > max * .5 ? knip.slice(0, punt + 1) : knip.replace(/\s+\S*$/, '') + '…');
+}
+// Kleio-teksten bevatten soms losse kopjes als "Toelichting:" — weghalen voor de leesbaarheid
+const schoon = t => String(t || '').replace(/\b(Toelichting|Context|Uitleg)\s*:?\s*(?=[A-Z“‘"'(])/g, ' ').replace(/\.(?=[A-Z])/g, '. ').replace(/\s+/g, ' ').trim();
+function toon(naam) { $$('.view').forEach(v => v.hidden = v.id !== 'view-' + naam); window.scrollTo(0, 0); }
+
+/* =====================================================================
+   BRONNEN LADEN (gedeelde collectie van Kleio-games)
+   ===================================================================== */
+let bronnen = [];
+async function laad() {
+  try {
+    const r = await fetch('../collectie.json', { cache: 'no-cache' });
+    const d = await r.json();
+    bronnen = (Array.isArray(d) ? d : d.bronnen || [])
+      .filter(b => b.afbeelding && Number.isFinite(+b.jaar) && b.jaar !== null && b.jaar !== '')
+      .map((b, i) => ({
+        id: b.id || 'b' + i, titel: b.titel || '', afbeelding: b.afbeelding, reserve: b.reserve || b.thumb,
+        jaar: +b.jaar, toelichting: b.toelichting || b.beschrijving || '', maker: b.maker || '', licentie: b.licentie || '',
+        bronUrl: b.bronUrl || '', controleren: !!b.controleren,
+      }))
+      .map(b => ({ ...b, tv: tijdvakVan(b.jaar).nr }));
+  } catch (e) {
+    $('#start-info').textContent = 'De bronnen konden niet geladen worden. Open het spel via Kleio-games op de website.';
+    return;
+  }
+  vulStart();
+}
+
+/* =====================================================================
+   START
+   ===================================================================== */
+$('#kies-bereik').innerHTML = BEREIKEN.map((b, i) => `<option value="${i}">${esc(b.naam)}</option>`).join('');
+function selectie() {
+  const bereik = BEREIKEN[+$('#kies-bereik').value].tv;
+  return bronnen.filter(b => bereik.includes(b.tv) && (!$('#kies-gecontroleerd').checked || !b.controleren));
+}
+function vulStart() {
+  const sel = selectie();
+  const per = {}; sel.forEach(b => per[b.tv] = (per[b.tv] || 0) + 1);
+  const bruikbaar = Object.values(per).filter(n => n >= 3).length && Object.keys(per).length >= 2;
+  $('#start-info').textContent = bruikbaar
+    ? `${sel.length} bronnen beschikbaar in deze selectie.`
+    : `Te weinig bronnen in deze selectie (${sel.length}). Kies andere tijdvakken${$('#kies-gecontroleerd').checked ? ' of zet "alleen gecontroleerde bronnen" uit' : ''}.`;
+  $('#knop-start').disabled = !bruikbaar;
+}
+['#kies-bereik', '#kies-gecontroleerd'].forEach(s => $(s).addEventListener('change', vulStart));
+
+/* =====================================================================
+   RONDES MAKEN
+   Drie bronnen uit tijdvak A, één uit tijdvak B.
+   Niveau bepaalt de afstand tussen A en B.
+   ===================================================================== */
+function maakRonde(pool, niveau, gebruikt) {
+  const vrij = pool.filter(b => !gebruikt.has(b.id));
+  const per = {}; vrij.forEach(b => (per[b.tv] = per[b.tv] || []).push(b));
+  // hoe ver past de afstand bij het niveau? 0 = precies goed. Kan het niet precies, dan zo dichtbij mogelijk.
+  const afwijking = d => niveau === 1 ? Math.max(0, 3 - d) : niveau === 2 ? Math.abs(d - 2) : d - 1;
+  let alle = [];
+  for (const a of Object.keys(per)) if (per[a].length >= 3)
+    for (const b of Object.keys(per)) if (a !== b) alle.push([+a, +b]);
+  if (!alle.length) return null;
+  const beste = Math.min(...alle.map(p => afwijking(Math.abs(p[0] - p[1]))));
+  const paren = alle.filter(p => afwijking(Math.abs(p[0] - p[1])) === beste);
+  // kies het groepstijdvak gelijkmatig, niet naar verhouding van het aantal bronnen
+  const groepen = [...new Set(paren.map(p => p[0]))];
+  const A = groepen[Math.floor(Math.random() * groepen.length)];
+  const opties = paren.filter(p => p[0] === A);
+  const B = opties[Math.floor(Math.random() * opties.length)][1];
+  const drie = schud(per[A].slice()).slice(0, 3);
+  const eend = schud(per[B].slice())[0];
+  const kaarten = schud([...drie, eend]);
+  [...drie, eend].forEach(b => gebruikt.add(b.id));
+  // vier tijdvakopties: het goede, dat van de vreemde eend (verleidelijk) en twee buren
+  const keuze = new Set([A, B]);
+  for (const d of schud([1, -1, 2, -2, 3, -3])) { if (keuze.size >= 4) break; const t = A + d; if (t >= 1 && t <= 10) keuze.add(t); }
+  return { A, B, kaarten, eendId: eend.id, tijdvakOpties: [...keuze].sort((x, y) => x - y) };
+}
+
+/* =====================================================================
+   SPEL
+   ===================================================================== */
+let spel = null;
+$('#knop-start').addEventListener('click', () => {
+  const pool = selectie(), niveau = +$('#kies-niveau').value, n = +$('#kies-rondes').value;
+  const gebruikt = new Set(), rondes = [];
+  for (let i = 0; i < n; i++) { const r = maakRonde(pool, niveau, gebruikt); if (!r) break; rondes.push(r); }
+  if (!rondes.length) { $('#start-info').textContent = 'Er konden geen rondes gemaakt worden met deze selectie.'; return; }
+  spel = { rondes, i: 0, punten: 0, hints: $('#kies-hints').checked, resultaten: [] };
+  toon('spel'); nieuweRonde();
+});
+
+let st;   // toestand van de huidige ronde
+function nieuweRonde() {
+  const r = spel.rondes[spel.i];
+  st = { eend: null, tijdvak: null, pogingen: 0, hintNr: { eend: 0, tijdvak: 0 }, klaar: false, getoond: false, gecontroleerd: false, laatsteFout: null };
+  $('#ronde-info').textContent = `Ronde ${spel.i + 1} van ${spel.rondes.length}`;
+  $('#score-info').textContent = `${spel.punten} punten`;
+  $('#uitleg').value = ''; $('#uitleg').disabled = false;
+  $('#feedback').innerHTML = ''; $('#zelf').innerHTML = '';
+  tekenKaarten(); tekenTijdvakken(); tekenKnoppen(); telTekens();
+  window.scrollTo(0, 0);
+}
+
+function tekenKaarten() {
+  const r = spel.rondes[spel.i];
+  $('#kaarten').innerHTML = r.kaarten.map((b, i) => {
+    const isEend = b.id === r.eendId;
+    let cls = '';
+    if (st.klaar) cls = (isEend ? 'eend' : 'groep') + ' getoond' + (st.eend === b.id ? ' gekozen' : '');
+    else if (st.eend === b.id) cls = 'gekozen' + (st.laatsteFout?.eend ? ' fout' : '');
+    const tv = TIJDVAKKEN[b.tv - 1];
+    return `<div class="kaart ${cls}" data-kaart="${esc(b.id)}" ${st.klaar ? 'data-klaar="1"' : `role="button" tabindex="0" aria-pressed="${st.eend === b.id}" aria-label="Bron ${i + 1}: ${esc(verbergJaren(b.titel))}"`}>
+      <span class="beeld"><img src="${esc(b.afbeelding)}" alt="${esc(st.klaar ? b.titel : verbergJaren(b.titel))}" loading="lazy" ${b.reserve ? `data-reserve="${esc(b.reserve)}"` : ''}></span>
+      <span class="vergroot" data-groot="${esc(b.afbeelding)}" role="button" tabindex="0" title="Vergroot de afbeelding">⤢</span>
+      <span class="tekst">
+        <span class="titel">${esc(st.klaar ? b.titel : verbergJaren(b.titel))}</span>
+        <span class="onthul">
+          <span class="jaar">${jaarTekst(b.jaar)}</span><br><span class="label-tv">Tijdvak ${tv.nr}: ${esc(tv.naam)}</span>
+          ${b.toelichting ? `<p style="margin:6px 0 0">${esc(kort(schoon(b.toelichting)))}</p>` : ''}
+          <span class="acties">
+            ${b.bronUrl ? `<a href="${esc(b.bronUrl)}" target="_blank" rel="noopener">Bekijk de bron ↗</a>` : ''}
+            ${window.KleioMelden ? KleioMelden.knop(b, 'Vreemde eend') : ''}
+          </span>
+        </span>
+      </span>
+    </div>`;
+  }).join('');
+  $$('#kaarten img').forEach(img => img.addEventListener('error', () => {
+    if (img.dataset.reserve && img.src !== img.dataset.reserve) img.src = img.dataset.reserve;
+  }));
+}
+
+function tekenTijdvakken() {
+  const r = spel.rondes[spel.i];
+  $('#tijdvakken').innerHTML = r.tijdvakOpties.map(nr => {
+    const tv = TIJDVAKKEN[nr - 1];
+    let cls = '';
+    if (st.klaar) cls = nr === r.A ? 'goed' : (st.tijdvak === nr ? 'fout' : '');
+    else if (st.tijdvak === nr) cls = 'gekozen' + (st.laatsteFout?.tijdvak ? ' fout' : '');
+    return `<button data-tv="${nr}" class="${cls}" ${st.klaar ? 'disabled' : ''}>${tv.nr}. ${esc(tv.naam)}</button>`;
+  }).join('');
+}
+
+function telTekens() {
+  const n = $('#uitleg').value.trim().length;
+  $('#teller').textContent = st.klaar ? '' : (n < MIN_UITLEG ? `Schrijf nog minstens ${MIN_UITLEG - n} tekens.` : '✓ Genoeg geschreven');
+  const k = $('#knop-controleer'); if (k) k.disabled = !(st.eend && st.tijdvak && n >= MIN_UITLEG);
+}
+$('#uitleg').addEventListener('input', telTekens);
+
+function tekenKnoppen() {
+  const laatste = spel.i + 1 >= spel.rondes.length;
+  if (st.klaar) {
+    $('#knoppen').innerHTML = `<button class="hoofd" id="knop-volgende">${laatste ? 'Bekijk je resultaat' : 'Volgende ronde'}</button>`;
+    $('#knop-volgende').onclick = () => { spel.i++; if (spel.i >= spel.rondes.length) einde(); else nieuweRonde(); };
+  } else if (st.gecontroleerd) {   // fout gecontroleerd: opnieuw of antwoord tonen
+    $('#knoppen').innerHTML = `<button class="hoofd" id="knop-opnieuw-proberen">Probeer opnieuw</button><button id="knop-toon">Toon het antwoord</button>`;
+    $('#knop-opnieuw-proberen').onclick = () => { st.gecontroleerd = false; $('#feedback').innerHTML = ''; tekenKnoppen(); telTekens(); };
+    $('#knop-toon').onclick = () => { st.getoond = true; afronden(); };
+  } else {
+    $('#knoppen').innerHTML = `<button class="hoofd" id="knop-controleer" disabled>Controleer</button>`;
+    $('#knop-controleer').onclick = controleer;
+    telTekens();
+  }
+}
+
+document.addEventListener('click', e => {
+  const groot = e.target.closest('[data-groot]');
+  if (groot) { e.stopPropagation(); vergroot(groot.dataset.groot); return; }
+  if (!spel || st.klaar || st.gecontroleerd) return;
+  const k = e.target.closest('[data-kaart]');
+  if (k && !e.target.closest('[data-meld], a')) { st.eend = k.dataset.kaart; st.laatsteFout = null; tekenKaarten(); telTekens(); return; }
+  const t = e.target.closest('[data-tv]');
+  if (t) { st.tijdvak = +t.dataset.tv; st.laatsteFout = null; tekenTijdvakken(); telTekens(); }
+});
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  if (e.target.matches('[data-groot]')) { e.preventDefault(); vergroot(e.target.dataset.groot); }
+  else if (e.target.matches('[data-kaart]') && spel && !st.klaar && !st.gecontroleerd) { e.preventDefault(); st.eend = e.target.dataset.kaart; st.laatsteFout = null; tekenKaarten(); telTekens(); $(`[data-kaart="${CSS.escape(st.eend)}"]`)?.focus(); }
+});
+function vergroot(src) {
+  const d = document.createElement('div'); d.className = 'groot';
+  d.innerHTML = `<img src="${esc(src)}" alt="Vergrote afbeelding">`;
+  d.onclick = () => d.remove(); document.body.appendChild(d);
+  const weg = ev => { if (ev.key === 'Escape') { d.remove(); document.removeEventListener('keydown', weg); } };
+  document.addEventListener('keydown', weg);
+}
+
+function controleer() {
+  const r = spel.rondes[spel.i];
+  const eendGoed = st.eend === r.eendId, tvGoed = st.tijdvak === r.A;
+  st.pogingen++;
+  if (eendGoed && tvGoed) { afronden(); return; }
+  st.gecontroleerd = true;
+  st.laatsteFout = { eend: !eendGoed, tijdvak: !tvGoed };
+  const delen = [];
+  if (!eendGoed) delen.push('De bron die je koos, is <b>niet</b> de vreemde eend.');
+  else delen.push('Je hebt de goede vreemde eend gevonden. ✓');
+  if (!tvGoed) delen.push(eendGoed ? 'Maar het tijdvak van de andere drie klopt nog niet.' : 'Ook het tijdvak klopt nog niet.');
+  else delen.push('Het tijdvak klopt. ✓');
+  let hint = '';
+  if (spel.hints) {
+    if (!eendGoed) {
+      const lijst = st.hintNr.eend === 0 ? [HINT_EEND_GEKOZEN] : HINT_EEND;
+      hint = lijst[(st.hintNr.eend === 0 ? 0 : (st.hintNr.eend - 1)) % lijst.length];
+      st.hintNr.eend++;
+    } else {
+      hint = st.hintNr.tijdvak < HINT_TIJDVAK.length ? HINT_TIJDVAK[st.hintNr.tijdvak] : HINT_TIJDVAK_GERICHT[r.A];
+      st.hintNr.tijdvak++;
+    }
+  }
+  $('#feedback').innerHTML = `<div class="feedback fout" role="status">
+    <p><b>Nog niet helemaal goed.</b></p>${delen.map(d => `<p>${d}</p>`).join('')}
+    ${hint ? `<div class="hint"><b>Hulpvraag:</b> ${esc(hint)}</div>` : ''}
+    <p class="zacht" style="margin-top:8px">Je mag je uitleg ook aanpassen.</p></div>`;
+  tekenKaarten(); tekenTijdvakken(); tekenKnoppen();
+}
+
+function afronden() {
+  const r = spel.rondes[spel.i];
+  st.klaar = true;
+  const punten = st.getoond ? 0 : st.pogingen === 1 ? 3 : st.pogingen === 2 ? 2 : 1;
+  spel.punten += punten;
+  const eend = r.kaarten.find(b => b.id === r.eendId);
+  const tvA = TIJDVAKKEN[r.A - 1], tvB = TIJDVAKKEN[r.B - 1];
+  spel.resultaten.push({ ronde: spel.i + 1, punten, getoond: st.getoond, pogingen: st.pogingen, uitleg: $('#uitleg').value.trim(),
+    eend: eend.titel, groep: tvA.naam, niveau: null });
+  $('#score-info').textContent = `${spel.punten} punten`;
+  $('#uitleg').disabled = true;
+  const kop = st.getoond ? 'Dit is het goede antwoord.' : st.pogingen === 1 ? 'Helemaal goed, in één keer!' : 'Goed gedaan!';
+  $('#feedback').innerHTML = `<div class="feedback goed" role="status">
+    <p><b>${kop}</b> ${punten ? `+${punten} ${punten === 1 ? 'punt' : 'punten'}` : ''}</p>
+    <p>Drie bronnen komen uit de <b>${esc(tvA.naam.toLowerCase())}</b> (tijdvak ${tvA.nr}). De vreemde eend, <i>${esc(eend.titel)}</i>, komt uit ${jaarTekst(eend.jaar)}: de <b>${esc(tvB.naam.toLowerCase())}</b> (tijdvak ${tvB.nr}).</p>
+    <p class="zacht">Bij elke bron zie je nu het jaartal en een toelichting. Klopt er iets niet aan een bron? Gebruik dan de knop ⚑ Meld.</p></div>`;
+  tekenKaarten(); tekenTijdvakken(); tekenKnoppen();
+  tekenZelfcontrole();
+}
+
+function tekenZelfcontrole() {
+  const uitleg = $('#uitleg').value.trim();
+  if (!uitleg) return;
+  $('#zelf').innerHTML = `<div class="blok zelf">
+    <h3>Controleer je uitleg</h3>
+    <p class="zacht">Dit schreef je:</p>
+    <blockquote>${esc(uitleg)}</blockquote>
+    <p class="zacht">Vink aan wat klopt. Wees eerlijk: dit telt niet mee voor je punten.</p>
+    ${CRITERIA.map((c, i) => `<label class="criterium"><input type="checkbox" data-crit="${i}"><span>${esc(c[0])}<small>${esc(c[1])}</small></span></label>`).join('')}
+    <div class="niveau" id="niveau" hidden></div>
+  </div>`;
+  $$('[data-crit]').forEach(c => c.addEventListener('change', () => {
+    const n = $$('[data-crit]:checked').length, [naam, tekst] = NIVEAUS[n];
+    $('#niveau').hidden = false;
+    $('#niveau').innerHTML = `<b>${naam}.</b> ${esc(tekst)}`;
+    spel.resultaten[spel.resultaten.length - 1].niveau = naam;
+  }));
+}
+
+/* =====================================================================
+   EINDE
+   ===================================================================== */
+function einde() {
+  const max = spel.rondes.length * 3;
+  $('#eind-score').textContent = `${spel.punten} van de ${max} punten`;
+  const inEen = spel.resultaten.filter(r => r.pogingen === 1 && !r.getoond).length;
+  $('#eind-tekst').textContent = `${inEen} van de ${spel.rondes.length} rondes had je in één keer goed.`;
+  $('#eind-overzicht').innerHTML = `<tr><th>Ronde</th><th>Vreemde eend</th><th>Andere drie</th><th>Punten</th><th>Jouw uitleg</th><th>Zelfcontrole</th></tr>` +
+    spel.resultaten.map(r => `<tr><td>${r.ronde}</td><td>${esc(r.eend)}</td><td>${esc(r.groep)}</td>
+      <td>${r.getoond ? 'antwoord getoond' : r.punten}</td><td class="uitleg">${esc(r.uitleg)}</td><td>${esc(r.niveau || '–')}</td></tr>`).join('');
+  $('#kopieer-melding').textContent = '';
+  toon('einde');
+}
+$('#knop-opnieuw').addEventListener('click', () => { spel = null; toon('start'); vulStart(); });
+$('#knop-kopieer').addEventListener('click', async () => {
+  const tekst = ['Vreemde eend — mijn antwoorden', `Score: ${spel.punten} van de ${spel.rondes.length * 3} punten`, '',
+    ...spel.resultaten.map(r => `Ronde ${r.ronde}: vreemde eend "${r.eend}", andere drie uit de ${r.groep.toLowerCase()}.\nMijn uitleg: ${r.uitleg}\nZelfcontrole: ${r.niveau || '–'}\n`)].join('\n');
+  try { await navigator.clipboard.writeText(tekst); $('#kopieer-melding').textContent = 'Gekopieerd! Plak het in je verslag of stuur het naar je docent.'; }
+  catch (e) { $('#kopieer-melding').textContent = 'Kopiëren lukt niet in deze browser.'; }
+});
+
+laad();
+</script>
+</body>
+</html>
