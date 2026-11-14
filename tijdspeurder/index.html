@@ -422,8 +422,14 @@ const KLEIO_PLEK = {
 // Welke brontypes van Kleio beeld bevatten (id's uit de Kleio-database)
 const KLEIO_BEELDTYPES = [
   { id: 190, naam: 'Foto' }, { id: 191, naam: 'Tekening of schilderij' }, { id: 189, naam: 'Spotprent, cartoon of poster' },
-  { id: 196, naam: 'Object' }, { id: 193, naam: 'Kaart' }, { id: 407, naam: 'Infographic' }, { id: 188, naam: 'Afbeelding (overig)' },
+  { id: 196, naam: 'Object' }, { id: 407, naam: 'Infographic' }, { id: 188, naam: 'Afbeelding (overig)' },
 ];
+/* Niet in de spellen (besluit Kleio-games, nov. 2026):
+   - kaarten: het jaartal gaat vaak over wat de kaart laat zien, niet over wanneer hij gemaakt is;
+   - AI-gemaakte afbeeldingen: die hebben geen echt maakjaar. */
+const KLEIO_UITGESLOTEN_TYPES = ['Kaart'];
+const AI_BEELD = /gemini|generated|dall-?e|chatgpt|midjourney|firefly|stable-?diffusion/i;
+const KAART_TITEL = /\b(land)?kaart(en)?\b|\bplattegrond|\batlas\b|\bkaartboek/i;
 
 /* ---------------------------------------------------------------------
    HISTORISCHE CONTEXTEN (syllabus centraal examen geschiedenis 2027, CvTE)
@@ -690,7 +696,8 @@ async function laadVasteCollectie() {
     // eigen aanpassingen (zelfde id) gaan voor; eigen toevoegingen komen erbij
     const opId = new Map(vast.map(b => [b.id, b]));
     (eigen || []).forEach(b => opId.set(b.id, b));
-    bronnen = [...opId.values()];
+    // eerder bewaarde kaarten of AI-beelden niet terugzetten
+    bronnen = [...opId.values()].filter(b => !AI_BEELD.test(b.afbeelding || '') && !(b.labels || []).some(l => KLEIO_UITGESLOTEN_TYPES.includes(l)));
     if (location.hash !== '#beheer') $$('header nav button[data-naar="beheer"]').forEach(b => b.hidden = true);
     vulStart();
   } catch (e) { /* geen collectie.json (of lokaal geopend): gewoon de eigen collectie gebruiken */ }
@@ -1253,6 +1260,8 @@ function kleioNaarBron(p, T) {
   const regio = ruimtes.find(r => r.ouder && bekend(r)) || ruimtes.find(r => KLEIO_HOOFDSTAD[r.naam]) || ruimtes.find(bekend);
   const plek = regio ? kleioLocatie(regio.naam) : null;
   const soorten = [...(p.type_bronn || []), ...(p.onderbouw_bovenbouw || [])].map(id => T[id]?.naam).filter(Boolean);
+  // kaarten en AI-beelden overslaan (zie KLEIO_UITGESLOTEN_TYPES)
+  if (soorten.some(n => KLEIO_UITGESLOTEN_TYPES.includes(n)) || AI_BEELD.test(img) || (KAART_TITEL.test(titel) && !/^Bevolkingskaart/i.test(titel))) return null;
   return {
     id: 'kleio-' + p.id,
     titel, afbeelding: img, thumb: img, jaar,
@@ -1333,7 +1342,7 @@ $('#knop-kleio').addEventListener('click', async () => {
     }
     if (bewaar()) {
       toonLijst();
-      melding(`Klaar: ${nieuw} nieuw, ${bijgewerkt} bijgewerkt, ${gecontroleerd} al gecontroleerd (ongemoeid gelaten), ${overgeslagen} overgeslagen (geen afbeelding of geen jaartal gevonden).`);
+      melding(`Klaar: ${nieuw} nieuw, ${bijgewerkt} bijgewerkt, ${gecontroleerd} al gecontroleerd (ongemoeid gelaten), ${overgeslagen} overgeslagen (geen afbeelding of jaartal, of een kaart of AI-beeld).`);
     } else { bronnen = voor; melding('Niet opgeslagen: te weinig ruimte. Kies minder soorten bronnen.'); }
   } catch (e) {
     melding('Importeren mislukt: ' + e.message);
